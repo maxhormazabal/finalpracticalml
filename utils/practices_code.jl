@@ -2,8 +2,6 @@ using Flux;
 using Flux.Losses;
 using DelimitedFiles;
 using Statistics;
-using Random
-using Random:seed!
 
 function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2})
     mins = minimum(dataset, dims=1)
