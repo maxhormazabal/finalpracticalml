@@ -579,7 +579,8 @@ end
 # N= Number of patterns, k= number of subsets into which the dataset is to be split
 function crossvalidation(N::Int64, k::Int64)
     #folds = collect(1:k) # Vector with the k folds
-    
+    # to make the function repeatable
+    Random.seed!(2)
     #indices = repeat(folds, outer=Int(ceil(N/k)));
     indices = repeat(1:k, Int64(ceil(N/k)))
     
