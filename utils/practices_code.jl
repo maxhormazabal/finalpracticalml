@@ -94,7 +94,10 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
 end
 
 #N=number of patterns, P=Percentage of patters separated
+# by using randperm along side with usign random, we guarantee that 
 function holdOut(N::Int, P::Real)
+#to assure that the function have repeatable results for splitting, Random.seed! was used inside the function and assign any constant value
+    Random.seed!(2)
     @assert ((P>=0.) & (P<=1.));
     indices = randperm(N)
     n_train = Int(round((1 - P)*N))
