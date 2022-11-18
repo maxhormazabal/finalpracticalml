@@ -1,4 +1,4 @@
-function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2})
+function normalizeMinutesMiliseconds(dataset::AbstractArray{<:Real,2})
     mins = minimum(dataset, dims=1)
     maxs = maximum(dataset, dims=1)
    
