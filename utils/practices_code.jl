@@ -1,10 +1,3 @@
-using Flux;
-using Flux.Losses;
-using DelimitedFiles;
-using Statistics;
-using Random
-using Random:seed!
-
 function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2})
     mins = minimum(dataset, dims=1)
     maxs = maximum(dataset, dims=1)
@@ -94,7 +87,10 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
 end
 
 #N=number of patterns, P=Percentage of patters separated
+# by using randperm along side with usign random, we guarantee that 
 function holdOut(N::Int, P::Real)
+    # Assure that the function have repeatable results for splitting, Random.seed! was used inside the function and assign any constant value
+    Random.seed!(2)
     @assert ((P>=0.) & (P<=1.));
     indices = randperm(N)
     n_train = Int(round((1 - P)*N))
@@ -583,7 +579,8 @@ end
 # N= Number of patterns, k= number of subsets into which the dataset is to be split
 function crossvalidation(N::Int64, k::Int64)
     #folds = collect(1:k) # Vector with the k folds
-    
+    # to make the function repeatable
+    Random.seed!(2)
     #indices = repeat(folds, outer=Int(ceil(N/k)));
     indices = repeat(1:k, Int64(ceil(N/k)))
     
@@ -658,10 +655,6 @@ function modelCrossValidation(modelType::Symbol,
         targets::AbstractArray{<:Any,1},
         crossValidationIndices::Array{Int64,1})
     
-    
-    # The developed normalisation functions should also be used on the data to be used by these models
-    normalizedinputs = normalizeMinMax(inputs)
-    
     # Load inputs and targets
     numFolds = maximum(crossValidationIndices);
     
@@ -677,19 +670,19 @@ function modelCrossValidation(modelType::Symbol,
     
     #ANN is defined inside the loop of folds
     if (modelType == :SVM)
-        # Additional optional parameters
-        coef0 =  haskey(parameters, "coef0") ? parameters["coef0"] : 0.0
-        shrinking = haskey(parameters, "shrinking") ? parameters["shrinking"] : true
-        probability = haskey(parameters, "probability") ? parameters["probability"] : false
-        tol = haskey(parameters, "tol") ? parameters["tol"] : 0.001
+            # Additional optional parameters
+            coef0 = get(modelsHyperParameters, "coef0", 0.0)
+            shrinking = get(modelsHyperParameters, "shrinking", true)
+            probability = get(modelsHyperParameters, "probability", false)
+            tol = get(modelsHyperParameters, "tol", 0.001)
 
         model = SVC(kernel=parameters["kernel"], degree=parameters["kernelDegree"], 
             gamma = parameters["kernelGamma"], C=parameters["C"], tol=tol);
     elseif (modelType == :DecisionTree)
         # Additional optional parameters
-        criterion = haskey(parameters, "criterion") ? parameters["criterion"] : "gini"
-        splitter = haskey(parameters, "splitter") ? parameters["splitter"] : "best"
-        min_samples_split = haskey(parameters, "min_samples_split") ? parameters["min_samples_split"] : 2
+        criterion = get(modelsHyperParameters, "criterion", "gini")
+        splitter = get(modelsHyperParameters, "splitter", "best")
+        min_samples_split = get(modelsHyperParameters, "min_samples_split", 2)
 
         # Decision trees
         # Maximum tree depth
@@ -697,8 +690,8 @@ function modelCrossValidation(modelType::Symbol,
             criterion=criterion, splitter=splitter, min_samples_split=min_samples_split);
     elseif (modelType == :kNN)
         # Additional optional parameters
-        weights = haskey(parameters, "weights") ? parameters["weights"] : "uniform"
-        metric = haskey(parameters, "metric") ? parameters["metric"] : "nan_euclidean"
+        weights = get(modelsHyperParameters, "weights", "uniform")
+        metric = get(modelsHyperParameters, "metric", "nan_euclidean")
 
         # kNN
         # k (number of neighbours to be considered)
