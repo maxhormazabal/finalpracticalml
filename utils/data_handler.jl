@@ -10,3 +10,17 @@ function normalizeMinutesMiliseconds(columnToNormalize::Any)
 
     return columnToNormalize
 end
+
+
+# Feature Selection
+function FeatureSelection(inputs,outputs,k)
+
+    selector = UnivariateFeatureSelector(method=pearson_correlation, k=k)
+    UnivariateFeatureSelector(FeatureSelectors.pearson_correlation, 5, nothing)
+
+    Features = select_features(selector, DataFrame(inputs, :auto),vec(outputs))
+
+    return(Features)
+
+end
+
