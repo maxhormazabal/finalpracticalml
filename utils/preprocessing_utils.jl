@@ -17,6 +17,6 @@ function quartilOutliers(data)
     inf_outlier = Q1-1.5*RIC
     ext_sup_outlier = Q3+3*RIC
     ext_inf_outlier = Q1-3*RIC
-    
+
     return (sup_outlier,inf_outlier,ext_sup_outlier,ext_inf_outlier)
 end
