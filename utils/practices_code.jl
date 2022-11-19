@@ -650,7 +650,7 @@ end
 
 # Creates the model, trains it and return the stadistics
 function modelCrossValidation(modelType::Symbol,
-        modelHyperparameters::Dict,
+        modelHyperParameters::Dict,
         inputs::AbstractArray{<:Real,2},
         targets::AbstractArray{<:Any,1},
         crossValidationIndices::Array{Int64,1})
@@ -671,31 +671,31 @@ function modelCrossValidation(modelType::Symbol,
     #ANN is defined inside the loop of folds
     if (modelType == :SVM)
             # Additional optional parameters
-            coef0 = get(modelsHyperParameters, "coef0", 0.0)
-            shrinking = get(modelsHyperParameters, "shrinking", true)
-            probability = get(modelsHyperParameters, "probability", false)
-            tol = get(modelsHyperParameters, "tol", 0.001)
+            coef0 = get(modelHyperParameters, "coef0", 0.0)
+            shrinking = get(modelHyperParameters, "shrinking", true)
+            probability = get(modelHyperParameters, "probability", false)
+            tol = get(modelHyperParameters, "tol", 0.001)
 
-        model = SVC(kernel=parameters["kernel"], degree=parameters["kernelDegree"], 
-            gamma = parameters["kernelGamma"], C=parameters["C"], tol=tol);
+        model = SVC(kernel=modelHyperParameters["kernel"], degree=modelHyperParameters["kernelDegree"], 
+            gamma = modelHyperParameters["kernelGamma"], C=modelHyperParameters["C"], tol=tol);
     elseif (modelType == :DecisionTree)
         # Additional optional parameters
-        criterion = get(modelsHyperParameters, "criterion", "gini")
-        splitter = get(modelsHyperParameters, "splitter", "best")
-        min_samples_split = get(modelsHyperParameters, "min_samples_split", 2)
+        criterion = get(modelHyperParameters, "criterion", "gini")
+        splitter = get(modelHyperParameters, "splitter", "best")
+        min_samples_split = get(modelHyperParameters, "min_samples_split", 2)
 
         # Decision trees
         # Maximum tree depth
-        model = DecisionTreeClassifier(max_depth=parameters["max_depth"], random_state=parameters["random_state"],
+        model = DecisionTreeClassifier(max_depth=modelHyperParameters["max_depth"], random_state=modelHyperParameters["random_state"],
             criterion=criterion, splitter=splitter, min_samples_split=min_samples_split);
     elseif (modelType == :kNN)
         # Additional optional parameters
-        weights = get(modelsHyperParameters, "weights", "uniform")
-        metric = get(modelsHyperParameters, "metric", "nan_euclidean")
+        weights = get(modelHyperParameters, "weights", "uniform")
+        metric = get(modelHyperParameters, "metric", "nan_euclidean")
 
         # kNN
         # k (number of neighbours to be considered)
-        model = KNeighborsClassifier(parameters["n_neighbors"], weights=weights, metric=metric);
+        model = KNeighborsClassifier(modelHyperParameters["n_neighbors"], weights=weights, metric=metric);
     end
     
     # Make a loop with k iterations (k folds) where, within each iteration, 4 matrices are created 
