@@ -4,7 +4,7 @@
 # 4. For kNN, test at least 6 different k values.
 
 # Test for the best SVM Model
-function test_SVM_Model(trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}},    
+function test_SVM_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},    
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
@@ -24,17 +24,17 @@ function test_SVM_Model(trainingDataset::Tuple{AbstractArray{<:Real,2}, Abstract
 
     # Kernel test
     parameters["kernel"] = "linear";
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     parameters["kernel"] = "poly";
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     parameters["kernel"] = "sigmoid";
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
@@ -42,32 +42,32 @@ function test_SVM_Model(trainingDataset::Tuple{AbstractArray{<:Real,2}, Abstract
 
     # C
     parameters["C"] = 1;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     parameters["C"] = 2;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     parameters["C"] = 10;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     # Degree test
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     parameters["kernelDegree"] = 5;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     parameters["kernelDegree"] = 1;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
@@ -75,13 +75,13 @@ function test_SVM_Model(trainingDataset::Tuple{AbstractArray{<:Real,2}, Abstract
 
     # Gamma test
     parameters["kernelGamma"] = 3;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 
     # Tolerance for stopping criterion
     parameters["tol"] = 0.01;
-    model_accuracy = train_Model(:SVM, parameters, trainingDataset, kFoldIndices)
+    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
     println("Parameters: ", parameters)
     println("Accuracy: ", model_accuracy)
 end
