@@ -4,38 +4,47 @@ function test_ANN_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{
     parameters = Dict();
 
     # For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     parameters["maxEpochs"] = 1000
     parameters["minLoss"] = 0.0
     parameters["learningRate"] = 0.01
     parameters["repetitionsTraining"] = 5
     parameters["maxEpochsVal"] = 20
+    parameters["validationRatio"] = 0
 
     parameters["topology"] = [8,3,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, (convert(Float64, 0), Dict()))
 
     parameters["topology"] = [8,4,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [14,7,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [16,8,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [28,14,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [32,16,8,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [28,14,7,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [16,8,4,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     parameters["topology"] = [20,10,5,1]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
 
     # Assign the best topology of previous test to check some others hyperparameters
