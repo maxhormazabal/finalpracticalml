@@ -1,7 +1,65 @@
-# 1. For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
-# 2. For SVM, test with different kernels and values of C. At least 8 SVM hyperparameter configurations.
-# 3. For decision trees, test at least 6 different depth values.
-# 4. For kNN, test at least 6 different k values.
+# Test for the best ANN Model
+function test_ANN_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},    
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["maxEpochs"] = 1000
+    parameters["minLoss"] = 0.0
+    parameters["learningRate"] = 0.01
+    parameters["repetitionsTraining"] = 5
+    parameters["maxEpochsVal"] = 20
+
+    parameters["topology"] = [8,3,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, (convert(Float64, 0), Dict()))
+
+    parameters["topology"] = [8,4,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [14,7,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [16,8,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [28,14,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [32,16,8,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [28,14,7,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [16,8,4,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["topology"] = [20,10,5,1]
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    # Assign the best topology of previous test to check some others hyperparameters
+    parameters["topology"] = res[2]["topology"];
+
+    # Learning rate   
+    parameters["learningRate"] = 0.1
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["learningRate"] = 0.001
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["learningRate"] = 0.01
+
+    # Transfer functions
+    parameters["transferFunctions"] = fill(sigmoid, length(parameters["topology"]))
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["transferFunctions"] = fill(tanh_fast, length(parameters["topology"]))
+    res = evaluateModel(:ANN, parameters, inputs, targets, kFoldIndices, res)
+
+    println("Best parameters: ", res[2])
+    println("Best accuracy: ", res[1])
+end
 
 # Test for the best SVM Model
 function test_SVM_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},    
@@ -22,135 +80,199 @@ function test_SVM_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{
     
     println("Test results for SVM model: ")
 
-    # Kernel test
-    parameters["kernel"] = "linear";
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
-    parameters["kernel"] = "poly";
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
-    parameters["kernel"] = "sigmoid";
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
+    # Test combination of Kernel and C values
     parameters["kernel"] = "rbf";
-
-    # C
     parameters["C"] = 1;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    
     parameters["C"] = 2;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
     parameters["C"] = 10;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
 
-    # Degree test
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
+    parameters["kernel"] = "linear";
+    parameters["C"] = 1;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["C"] = 2;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["C"] = 10;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["kernel"] = "poly";
+    parameters["C"] = 1;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["C"] = 2;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["C"] = 10;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["kernel"] = "sigmoid";
+    parameters["C"] = 1;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["C"] = 2;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["C"] = 10;
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    # Assign the best kernel and C of previous test to check the rest of the hyperparameters
+    parameters["kernel"] = res[2]["kernel"];
+    parameters["C"] = res[2]["C"];
 
+    # Degree test   
     parameters["kernelDegree"] = 5;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+ 
     parameters["kernelDegree"] = 1;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
     parameters["kernelDegree"] = 3;
 
     # Gamma test
     parameters["kernelGamma"] = 3;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
-
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
     # Tolerance for stopping criterion
     parameters["tol"] = 0.01;
-    model_accuracy = modelCrossValidation(:SVM, parameters, inputs, targets, kFoldIndices)
-    println("Parameters: ", parameters)
-    println("Accuracy: ", model_accuracy)
+    res = evaluateModel(:SVM, parameters, inputs, targets, kFoldIndices, res)
+    
+    println("Best parameters: ", res[2])
+    println("Best accuracy: ", res[1])
 end
 
-# Train a model and get its accuracy with cross validation
-function train_Model(modelType::Symbol, modelsHyperParameters::Dict,     
-    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}},    
+# Test for the best decision tree Model
+function test_DT_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},    
     kFoldIndices::Array{Int64,1})
+    parameters = Dict();
 
-    # Load inputs and targets
-    numFolds = maximum(kFoldIndices);
-    crossvalidationResults_accuracy = Vector{Float64}(undef, numFolds);
+    # For decision trees, test at least 6 different depth values.
+    parameters["max_depth"]=4
+    parameters["random_state"]=1
 
-    for numFold in 1:length(unique(kFoldIndices))
-        trainingInputs = trainingDataset[1][kFoldIndices.!=numFold,:];
-        trainingTargets = trainingDataset[2][kFoldIndices.!=numFold,:];
-        testInputs = trainingDataset[1][kFoldIndices.==numFold,:];
-        testTargets = trainingDataset[2][kFoldIndices.==numFold,:];
+    # Additional optional parameters
+    parameters["criterion"] = "gini"
+    parameters["splitter"] = "best"
+    parameters["min_samples_split"] = 2
+    
+    println("Test results for Decision tree model: ")
 
-        if (modelType == :SVM)
-            # Additional optional parameters
-            coef0 = get(modelsHyperParameters, "coef0", 0.0)
-            shrinking = get(modelsHyperParameters, "shrinking", true)
-            probability = get(modelsHyperParameters, "probability", false)
-            tol = get(modelsHyperParameters, "tol", 0.001)
+    # Test max depth values
+    parameters["max_depth"]=4
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    
+    parameters["max_depth"]=3
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["max_depth"]=2
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
 
-            fold_model = SVC(kernel=modelsHyperParameters["kernel"], degree=modelsHyperParameters["kernelDegree"], 
-                gamma = modelsHyperParameters["kernelGamma"], C=modelsHyperParameters["C"], tol=tol,
-                probability = probability, coef0 = coef0, shrinking= shrinking);
-        elseif (modelType == :DecisionTree)
-            # Additional optional parameters
-            criterion = get(modelsHyperParameters, "criterion", "gini")
-            splitter = get(modelsHyperParameters, "splitter", "best")
-            min_samples_split = get(modelsHyperParameters, "min_samples_split", 2)
+    parameters["max_depth"]=1
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["max_depth"]=5
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["max_depth"]=6
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
+    
+    # Assign the best kernel and C of previous test to check the rest of the hyperparameters
+    parameters["max_depth"] = res[2]["max_depth"];
 
-            # Decision trees
-            # Maximum tree depth
-            fold_model = DecisionTreeClassifier(max_depth=modelsHyperParameters["max_depth"], 
-                random_state=modelsHyperParameters["random_state"],
-                criterion=criterion, splitter=splitter, min_samples_split=min_samples_split);
-        elseif (modelType == :kNN)
-            # Additional optional parameters
-            weights = get(modelsHyperParameters, "weights", "uniform")
-            metric = get(modelsHyperParameters, "metric", "nan_euclidean")
+    # Splitter  
+    parameters["splitter"] = "random";
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
 
-            # kNN
-            # k (number of neighbours to be considered)
-            fold_model = KNeighborsClassifier(modelsHyperParameters["n_neighbors"], weights=weights, metric=metric);
-        elseif (modelType == :ANN)
-            validationRatio = get(modelsHyperParameters, "validationRatio", 0)
-            
-            if validationRatio > 0
-                fold_model = MLPClassifier(hidden_layer_sizes=modelsHyperParameters["topology"], max_iter=modelsHyperParameters["maxEpochs"],
-                    learning_rate_init=modelsHyperParameters["learningRate"],early_stopping=true, validation_fraction=validationRatio)
-            else
-                fold_model = MLPClassifier(hidden_layer_sizes=modelsHyperParameters["topology"], max_iter=modelsHyperParameters["maxEpochs"],
-                    learning_rate_init=modelsHyperParameters["learningRate"])
-            end
-        end
-        
-        # vec to avoid DataConversionWarning ravel
-        fit!(fold_model, trainingInputs, vec(trainingTargets));
+    parameters["splitter"] = "best"
+ 
+    # min_samples_split
+    parameters["min_samples_split"] = 4;
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["min_samples_split"] = 3;
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
 
-        acc = score(fold_model, testInputs, testTargets)
+    parameters["min_samples_split"] = 1;
+    res = evaluateModel(:DecisionTree, parameters, inputs, targets, kFoldIndices, res)
+    
+    println("Best parameters: ", res[2])
+    println("Best accuracy: ", res[1])
+end
 
-        crossvalidationResults_accuracy[numFold] = acc;
+# Test for the best KNN Model
+function test_KNN_Model(inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},    
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # For kNN, test at least 6 different k values.
+    parameters["n_neighbors"]=3
+
+    # Additional optional parameters
+    parameters["weights"] = "uniform"
+    parameters["metric"] = "nan_euclidean"
+    
+    println("Test results for KNN model: ")
+
+    # Test max depth values
+    parameters["n_neighbors"]=3
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    
+    parameters["n_neighbors"]=2
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["n_neighbors"]=1
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=4
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["n_neighbors"]=5
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+    
+    parameters["n_neighbors"]=6
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+    
+    # Assign the best k of previous test to check the rest of the hyperparameters
+    parameters["n_neighbors"] = res[2]["n_neighbors"];
+
+    # weights  
+    parameters["weights"] = "distance";
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+
+    parameters["weights"] = "uniform"
+ 
+    # metric
+    parameters["metric"] = "minkowski";
+    res = evaluateModel(:kNN, parameters, inputs, targets, kFoldIndices, res)
+    
+    println("Best parameters: ", res[2])
+    println("Best accuracy: ", res[1])
+end
+
+function evaluateModel(modelType::Symbol,
+    modelHyperParameters::Dict,
+    inputs::AbstractArray{<:Real,2},
+    targets::AbstractArray{<:Any,1},
+    crossValidationIndices::Array{Int64,1}, 
+    previousModel::Tuple{Float64, Dict})
+
+    model_accuracy = modelCrossValidation(modelType, modelHyperParameters, inputs, targets, crossValidationIndices)
+    # return (model, [accuracy, errorrate, sensitivity, specificity, fscore]);
+    println("Parameters: ", modelHyperParameters)
+    println("Accuracy: ", model_accuracy[2][1])
+
+    if (model_accuracy[2][1] > previousModel[1])
+        best_parameters = modelHyperParameters
+        best_accuracy = model_accuracy[2][1]
+    else
+        best_parameters = previousModel[2]
+        best_accuracy = previousModel[1]
     end
 
-    accuracy = mean(crossvalidationResults_accuracy)
-    
-    return accuracy
+    return (best_accuracy, best_parameters)
 end

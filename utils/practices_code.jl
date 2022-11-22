@@ -752,7 +752,7 @@ function modelCrossValidation(modelType::Symbol,
                 vmax = maximum(outputs', dims=2);
                 outputs = (outputs' .== vmax);
 
-                metrics = confusionMatrix(outputs, testTargets, weighted=false)
+                metrics = confusionMatrix(outputs, testTargets)
                 # printConfusionMatrix(metrics);
 
                 #return the average of the test results (with the selected metric or metrics) in order to have the test value 
@@ -776,7 +776,7 @@ function modelCrossValidation(modelType::Symbol,
             fit!(model, trainingInputs, vec(trainingTargets));
 
             testOutputs = predict(model, testInputs);
-            metrics = confusionMatrix(testOutputs, vec(testTargets), weighted=false);
+            metrics = confusionMatrix(testOutputs, vec(testTargets));
             
             #Once the model has been trained (several times) on each fold, take the result and fill in the vector(s) 
             #created earlier (one for each metric).
