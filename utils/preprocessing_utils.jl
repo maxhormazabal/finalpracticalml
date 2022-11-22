@@ -47,3 +47,24 @@ function predLoudness(value)
     y = -20.8171 + 41.27*x - 48.2937*x2 + 23.8144*x3
     return y
 end
+
+# Normalize time in minutes to miliseconds
+function durationToSeconds(columnToNormalize::Any)
+    for i in (1:length(columnToNormalize))
+        # If the value is less than 100, its in minutes
+        if columnToNormalize[i] < 100
+            # Multiply the value to convert from minutes to miliseconds
+            columnToNormalize[i] = columnToNormalize[i] * 60000
+        end
+    end
+    
+    for i in (1:length(columnToNormalize))
+        # If the value is less than 100, its in minutes
+        if columnToNormalize[i] > 100
+            # Multiply the value to convert from minutes to miliseconds
+            columnToNormalize[i] = columnToNormalize[i] * 0.001
+        end
+    end
+    return columnToNormalize
+end
+
