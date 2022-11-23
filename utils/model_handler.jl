@@ -226,6 +226,23 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
     " FScore: ", metrics[5])
 end
 
+# Get best decition tree and train it
+function get_Best_DT(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # Best parameters: Dict{Any, Any}("max_depth" => 5, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 2)
+    parameters["max_depth"]=5
+    parameters["random_state"]=1
+    parameters["criterion"] = "gini"
+    parameters["splitter"] = "best"
+    parameters["min_samples_split"] = 2
+
+    best_model, = modelCrossValidation(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
 # Test for the best KNN Model
 function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
@@ -300,6 +317,21 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
      println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
      " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
      " FScore: ", metrics[5])
+end
+
+# Get best knn and train it
+function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # Best parameters: Dict{Any, Any}("n_neighbors" => 9, "metric" => "minkowski", "weights" => "uniform")
+    parameters["n_neighbors"]=9
+    parameters["metric"]="minkowski"
+    parameters["weights"] = "uniform"
+
+    best_model, = modelCrossValidation(:kNN, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
 end
 
 function evaluateModel(modelType::Symbol,
