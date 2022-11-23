@@ -262,6 +262,18 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 
     parameters["n_neighbors"]=7
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=8
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=9
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=10
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=11
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
     
     # Assign the best k of previous test to check the rest of the hyperparameters
     parameters["n_neighbors"] = res[2]["n_neighbors"];
@@ -279,11 +291,11 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     println("//////////////////////////////////////////")
     println("Best parameters: ", res[2], " Best accuracy: ", res[1])
 
-     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
-     model, = modelCrossValidation(:kNN, res[2], train_inputs, train_targets, kFoldIndices)
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:kNN, res[2], train_inputs, train_targets, kFoldIndices)
     
-     testOutputs = predict(model, test_inputs);
-     metrics = confusionMatrix(testOutputs, vec(test_targets));
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, vec(test_targets));
      
      println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
      " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
