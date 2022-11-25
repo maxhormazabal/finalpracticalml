@@ -397,5 +397,10 @@ end
 
 # load the model from disk
 function loadModel(path::String)
-    return @load path model
+    try
+        return @load path model
+    catch e
+        println("An error has occurred while loading the model from disk: ", e.msg)
+        println("A custom model while be created instead")
+    end
 end
