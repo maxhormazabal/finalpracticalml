@@ -716,7 +716,7 @@ function modelCrossValidation(modelType::Symbol,
             trainingTargets = oneHotEncoding(vec(trainingTargets))
             testTargets = oneHotEncoding(vec(testTargets))
             
-            repetitionsTraining=parameters["repetitionsTraining"]
+            repetitionsTraining=modelHyperParameters["repetitionsTraining"]
             
             # AAN are not deterministic, so we must repeat each fold several times and
             # save the metrics for each of those iterations (for ex., accuracy and f1)
@@ -727,24 +727,24 @@ function modelCrossValidation(modelType::Symbol,
             testANNF1EachRepetition = Array{Float64,1}(undef, repetitionsTraining);
             
             for numTraining in 1:repetitionsTraining
-                validationRatio = parameters["validationRatio"]
+                validationRatio = modelHyperParameters["validationRatio"]
                 
                 if validationRatio>0
                     # Train ANN using training, validation and test sets.
                     (trainingIndices, validationIndices) = holdOut(size(trainingInputs,1), 
                         validationRatio*size(trainingInputs,1)/size(inputs,1));
                     
-                    model, = trainClassANN(parameters["topology"],(trainingInputs, trainingTargets),
+                    model, = trainClassANN(modelHyperParameters["topology"],(trainingInputs, trainingTargets),
                         validationDataset=(trainingInputs[validationIndices[2],1:4],trainingTargets[validationIndices[2],:]), 
-                        testDataset=(testInputs, testTargets), transferFunctions=parameters["transferFunctions"],
-                        maxEpochs=parameters["maxEpochs"], minLoss=parameters["minLoss"], 
-                        learningRate=parameters["learningRate"], maxEpochsVal=parameters["maxEpochsVal"])
+                        testDataset=(testInputs, testTargets), transferFunctions=modelHyperParameters["transferFunctions"],
+                        maxEpochs=modelHyperParameters["maxEpochs"], minLoss=modelHyperParameters["minLoss"], 
+                        learningRate=modelHyperParameters["learningRate"], maxEpochsVal=modelHyperParameters["maxEpochsVal"])
                 else
                     # Train ANN using training and test sets.
-                    model, = trainClassANN(parameters["topology"],(trainingInputs, trainingTargets),
-                        testDataset=(testInputs, testTargets), transferFunctions=parameters["transferFunctions"],
-                        maxEpochs=parameters["maxEpochs"], minLoss=parameters["minLoss"], 
-                        learningRate=parameters["learningRate"], maxEpochsVal=parameters["maxEpochsVal"])
+                    model, = trainClassANN(modelHyperParameters["topology"],(trainingInputs, trainingTargets),
+                        testDataset=(testInputs, testTargets), transferFunctions=modelHyperParameters["transferFunctions"],
+                        maxEpochs=modelHyperParameters["maxEpochs"], minLoss=modelHyperParameters["minLoss"], 
+                        learningRate=modelHyperParameters["learningRate"], maxEpochsVal=modelHyperParameters["maxEpochsVal"])
                 end
                 
                 # Get prediction and transform outputs
