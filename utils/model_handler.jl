@@ -1,7 +1,7 @@
 # Test for the best ANN Model
 function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1}, 
-    kFoldIndices::Array{Int64,1})
+    kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
     # For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
@@ -74,7 +74,7 @@ end
 # Test for the best SVM Model
 function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
-    kFoldIndices::Array{Int64,1})
+    kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
     # For SVM, test with different kernels and values of C. At least 8 SVM hyperparameter configurations.
@@ -159,6 +159,9 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
     model, = modelCrossValidation(:SVM, res[2], train_inputs, train_targets, kFoldIndices)
     
+    # Save the model in disk
+    @save path model
+
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, vec(test_targets));
      
@@ -167,10 +170,30 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
      " FScore: ", metrics[5])
 end
 
+# Get best decition tree and train it
+function get_Best_SVM(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # Best parameters: Dict{Any, Any}("max_depth" => 5, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 2)
+    parameters["tol"]=0.01
+    parameters["kernelGamma"]=3
+    parameters["C"] = 10
+    parameters["kernel"] = "poly"
+    parameters["shrinking"] = true
+    parameters["probability"] = false
+    parameters["coef0"] = 0.0
+    parameters["kernelDegree"] = 3
+
+    best_model, = modelCrossValidation(:SVM, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
 # Test for the best decision tree Model
 function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},   
-    kFoldIndices::Array{Int64,1})
+    kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
     # For decision trees, test at least 6 different depth values.
@@ -228,6 +251,9 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
     model, = modelCrossValidation(:DecisionTree, res[2], train_inputs, train_targets, kFoldIndices)
     
+    # Save the model in disk
+    @save path model
+
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, vec(test_targets));
     
@@ -256,7 +282,7 @@ end
 # Test for the best KNN Model
 function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
-    kFoldIndices::Array{Int64,1})
+    kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
     # For kNN, test at least 6 different k values.
@@ -320,7 +346,10 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
     model, = modelCrossValidation(:kNN, res[2], train_inputs, train_targets, kFoldIndices)
-    
+
+    # Save the model in disk
+    @save path model
+
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, vec(test_targets));
      
@@ -364,4 +393,9 @@ function evaluateModel(modelType::Symbol,
     end
 
     return (best_accuracy, best_parameters)
+end
+
+# load the model from disk
+function loadModel(path::String)
+    return @load path model
 end
