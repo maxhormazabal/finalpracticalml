@@ -69,6 +69,34 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 
     println("//////////////////////////////////////////")
     println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:ANN, res[2], train_inputs, train_targets, kFoldIndices)
+    
+    # Save the model in disk
+    @save path model
+
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, vec(test_targets));
+     
+     println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[5])
+end
+
+# Get best knn and train it
+function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # Best parameters: Dict{Any, Any}("n_neighbors" => 9, "metric" => "minkowski", "weights" => "uniform")
+    parameters["n_neighbors"]=9
+    parameters["metric"]="minkowski"
+    parameters["weights"] = "uniform"
+
+    best_model, = modelCrossValidation(:ANN, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
 end
 
 # Test for the best SVM Model
