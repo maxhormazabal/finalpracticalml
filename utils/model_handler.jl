@@ -155,6 +155,16 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     
     println("//////////////////////////////////////////")
     println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:SVM, res[2], train_inputs, train_targets, kFoldIndices)
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, vec(test_targets));
+     
+     println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[5])
 end
 
 # Test for the best decision tree Model
