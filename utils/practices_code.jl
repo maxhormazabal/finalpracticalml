@@ -40,7 +40,7 @@ function oneHotEncoding(feature::AbstractArray{<:Any,1},
 
     numClasses = length(classes);
     @assert(numClasses>1)
-    
+
     if (numClasses==2)
         oneHot = reshape(feature.==classes[1], :, 1);
     else
@@ -49,7 +49,7 @@ function oneHotEncoding(feature::AbstractArray{<:Any,1},
             oneHot[:, numClass] .= (feature.==classes[numClass]);
         end
     end
-    
+
     return oneHot;
 end;
 
@@ -249,7 +249,6 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     numInstances = length(targets);
     @assert(length(outputs)==numInstances);
     @assert(numInstances>0);
-    
     TN = sum(.!outputs .& .!targets);
     FN = sum(.!outputs .& targets);
     TP = sum( outputs .& targets);
@@ -319,58 +318,7 @@ end
 # Calculate the confusion matrix and its stadistics
 function confusionMatrix(outputs::AbstractArray{<:Real,1},targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     binary_outputs = outputs.>= threshold;
-
     return confusionMatrix(binary_outputs, targets)
-end
-
-# Prints a generic confusion Matrix and its stadistics
-function printConfusionMatrix(matrix::Tuple{Float64, Float64, Float64, Float64, Float64, Float64, Float64, Matrix{Int64}})
-    println("-----------------------\r")
-    println("-------|   -   |   +   \r")
-    println("-----------------------\r")
-    println("   +   |   ", matrix[8][1,1], "   |   ", matrix[8][1,2], "    \r")
-    println("-----------------------\r")
-    println("   -   |   ", matrix[8][2,1], "   |   ", matrix[8][2,2], "    \r")
-    println("-----------------------\r")
-    println("Accuracy: ", matrix[1])
-    println("Error rate: ", matrix[2])
-    println("Sensitivity: ", matrix[3])
-    println("Specificity: ", matrix[4])
-    println("Positive Prediction Value: ", matrix[5])
-    println("Negative Prediction Value: ", matrix[6])
-    println("Fscore: ", matrix[7])
-end
-
-# Prints a generic confusion Matrix and its stadistics
-function printConfusionMatrix(matrix::Tuple{Float64, Float64, Float64, Float64, Float64, Float64, Float64, Matrix{Float64}})
-    println("-----------------------\r")
-    println("-------|   -   |   +   \r")
-    println("-----------------------\r")
-    println("   +   |   ", matrix[8][1,1], "   |   ", matrix[8][1,2], "    \r")
-    println("-----------------------\r")
-    println("   -   |   ", matrix[8][2,1], "   |   ", matrix[8][2,2], "    \r")
-    println("-----------------------\r")
-    println("Accuracy: ", matrix[1])
-    println("Error rate: ", matrix[2])
-    println("Sensitivity: ", matrix[3])
-    println("Specificity: ", matrix[4])
-    println("Positive Prediction Value: ", matrix[5])
-    println("Negative Prediction Value: ", matrix[6])
-    println("Fscore: ", matrix[7])
-end
-
-# Prints the confusion Matrix and its stadistics
-function printConfusionMatrix(outputs::AbstractArray{Bool,1},targets::AbstractArray{Bool,1})
-    res = confusionMatrix(outputs, targets)
-    
-    printConfusionMatrix(res)
-end
-
-# Prints the confusion matrix
-function printConfusionMatrix(outputs::AbstractArray{<:Real,1},targets::AbstractArray{Bool,1}; threshold::Real=0.5)
-    res = confusionMatrix(outputs, targets, threshold= threshold)
-    
-    printConfusionMatrix(res)
 end
 
 #Receives two lists of boolean and returns the average of equal values between them
@@ -557,14 +505,12 @@ end
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     values = classifyOutputs(outputs);
-    
     confusionMatrix(values, targets, weighted = weighted) 
 end
 
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     # it is necessary that all the output classes (vector outputs) are included in the desired output classes (vector targets) 
     @assert(all([in(output, unique(targets)) for output in outputs]))
-    
     # Use the same list of classes for encoding the same way
     encoded_targets = oneHotEncoding(targets, unique(targets))
     encoded_outputs = oneHotEncoding(outputs, unique(targets))
@@ -652,7 +598,7 @@ end
 function modelCrossValidation(modelType::Symbol,
         modelHyperParameters::Dict,
         inputs::AbstractArray{<:Real,2},
-        targets::AbstractArray{<:Any,1},
+        targets::AbstractArray{Bool,2},
         crossValidationIndices::Array{Int64,1})
     
     # Load inputs and targets
@@ -753,7 +699,6 @@ function modelCrossValidation(modelType::Symbol,
                 outputs = (outputs' .== vmax);
 
                 metrics = confusionMatrix(outputs, testTargets)
-                # printConfusionMatrix(metrics);
 
                 #return the average of the test results (with the selected metric or metrics) in order to have the test value 
                 #corresponding to this k.
@@ -773,11 +718,15 @@ function modelCrossValidation(modelType::Symbol,
             crossvalidationResults_fscore[numFold] = mean(testANNF1EachRepetition);
         else
             #vec to avoid DataConversionWarning ravel
-            fit!(model, trainingInputs, vec(trainingTargets));
-
+            fit!(model, trainingInputs, trainingTargets);
             testOutputs = predict(model, testInputs);
-            metrics = confusionMatrix(testOutputs, vec(testTargets));
-            
+
+            metrics = confusionMatrix(testOutputs, testTargets, weighted=false);
+
+            # Uncomment to test model accuracy
+            #println("Accuracy: ", metrics[1], " Error rate: ", metrics[2]," Sensitivity: ", metrics[3]," Specificity: ", metrics[4]," Fscore: ", metrics[7])
+            #realAccuracy(testOutputs, testTargets)
+
             #Once the model has been trained (several times) on each fold, take the result and fill in the vector(s) 
             #created earlier (one for each metric).
             crossvalidationResults_accuracy[numFold] = metrics[1];# Accuracy
@@ -795,52 +744,21 @@ function modelCrossValidation(modelType::Symbol,
     sensitivity = mean(crossvalidationResults_sensitivity)
     specificity = mean(crossvalidationResults_specificity)
     fscore = mean(crossvalidationResults_fscore)
-    
+   
     #As a result of this call, at least the test value in the selected metric(s) should be returned. 
     #If the model is not deterministic (as is the case for the ANNs), it will be the average of the results of several trainings.
     return (model, [accuracy, errorrate, sensitivity, specificity, fscore]);
 end
 
-
-function multiclassConfusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    
-    targets = targets'
-    outputs = outputs'
-
-    num_columns = size(targets,2)
-    confusion_matrix= zeros(num_columns,num_columns)
-  
-      #confusion matrix
-    for x in 1:num_columns
-        for y in 1:num_columns
-            for c in 1:(size(outputs,1))
-                if outputs[c,x] == true
-                    if outputs[c,x] == targets[c,y]
-                        confusion_matrix[y,x] =confusion_matrix[y,x] + 1
-                    end
-                end
-            end  
+function realAccuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
+    ok=0
+    tot=0
+    for x in 1:size(outputs,1)
+        tot = tot + 1
+        if (outputs[x,1:11]==targets[x,1:11])
+            ok = ok + 1
         end
     end
 
-    mcm = confusion_matrix
-
-    TP = zeros(size(mcm,1))
-    precision = zeros(size(mcm,1))
-    recall = zeros(size(mcm,1))
-
-    for index in 1:size(mcm,1)
-        TP[index] = mcm[index,index]
-        STrow = sum(mcm[index,:])
-        STcolumn = sum(mcm[:,index])
-        precision[index] = TP[index]/STcolumn
-        recall[index] = TP[index]/STrow
-    end
-
-    model_accuracy = sum(TP)/sum(mcm)
-    model_precision = mean(precision)
-    model_recall = mean(recall)
-    model_fScore = (2*model_precision*model_recall)/(model_precision+model_recall)
-
-    return (model_accuracy,model_precision, model_recall,model_fScore, mcm)
+    println("Tot: ", tot, " Ok: ", ok)
 end
