@@ -800,3 +800,47 @@ function modelCrossValidation(modelType::Symbol,
     #If the model is not deterministic (as is the case for the ANNs), it will be the average of the results of several trainings.
     return (model, [accuracy, errorrate, sensitivity, specificity, fscore]);
 end
+
+
+function multiclassConfusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    
+    targets = targets'
+    outputs = outputs'
+
+    num_columns = size(targets,2)
+    confusion_matrix= zeros(num_columns,num_columns)
+  
+      #confusion matrix
+    for x in 1:num_columns
+        for y in 1:num_columns
+            for c in 1:(size(outputs,1))
+                if outputs[c,x] == true
+                    if outputs[c,x] == targets[c,y]
+                        confusion_matrix[y,x] =confusion_matrix[y,x] + 1
+                    end
+                end
+            end  
+        end
+    end
+
+    mcm = confusion_matrix
+
+    TP = zeros(size(mcm,1))
+    precision = zeros(size(mcm,1))
+    recall = zeros(size(mcm,1))
+
+    for index in 1:size(mcm,1)
+        TP[index] = mcm[index,index]
+        STrow = sum(mcm[index,:])
+        STcolumn = sum(mcm[:,index])
+        precision[index] = TP[index]/STcolumn
+        recall[index] = TP[index]/STrow
+    end
+
+    model_accuracy = sum(TP)/sum(mcm)
+    model_precision = mean(precision)
+    model_recall = mean(recall)
+    model_fScore = (2*model_precision*model_recall)/(model_precision+model_recall)
+
+    return (model_accuracy,model_precision, model_recall,model_fScore, mcm)
+end
