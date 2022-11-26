@@ -504,6 +504,56 @@ function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray
     return confusionMatrix(encoded_outputs, encoded_targets, weighted=weighted)
 end
 
+# Prints a generic confusion Matrix and its stadistics
+function printConfusionMatrix(matrix::Tuple{Float64, Float64, Float64, Float64, Float64, Float64, Float64, Matrix{Int64}})
+    println("-----------------------\r")
+    println("-------|   -   |   +   \r")
+    println("-----------------------\r")
+    println("   +   |   ", matrix[8][1,1], "   |   ", matrix[8][1,2], "    \r")
+    println("-----------------------\r")
+    println("   -   |   ", matrix[8][2,1], "   |   ", matrix[8][2,2], "    \r")
+    println("-----------------------\r")
+    println("Accuracy: ", matrix[1])
+    println("Error rate: ", matrix[2])
+    println("Sensitivity: ", matrix[3])
+    println("Specificity: ", matrix[4])
+    println("Positive Prediction Value: ", matrix[5])
+    println("Negative Prediction Value: ", matrix[6])
+    println("Fscore: ", matrix[7])
+end
+
+# Prints a generic confusion Matrix and its stadistics
+function printConfusionMatrix(matrix::Tuple{Float64, Float64, Float64, Float64, Float64, Float64, Float64, Matrix{Float64}})
+    println("-----------------------\r")
+    println("-------|   -   |   +   \r")
+    println("-----------------------\r")
+    println("   +   |   ", matrix[8][1,1], "   |   ", matrix[8][1,2], "    \r")
+    println("-----------------------\r")
+    println("   -   |   ", matrix[8][2,1], "   |   ", matrix[8][2,2], "    \r")
+    println("-----------------------\r")
+    println("Accuracy: ", matrix[1])
+    println("Error rate: ", matrix[2])
+    println("Sensitivity: ", matrix[3])
+    println("Specificity: ", matrix[4])
+    println("Positive Prediction Value: ", matrix[5])
+    println("Negative Prediction Value: ", matrix[6])
+    println("Fscore: ", matrix[7])
+end
+
+# Prints the confusion Matrix and its stadistics
+function printConfusionMatrix(outputs::AbstractArray{Bool,1},targets::AbstractArray{Bool,1})
+    res = confusionMatrix(outputs, targets)
+    
+    printConfusionMatrix(res)
+end
+
+# Prints the confusion matrix
+function printConfusionMatrix(outputs::AbstractArray{<:Real,1},targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+    res = confusionMatrix(outputs, targets, threshold= threshold)
+    
+    printConfusionMatrix(res)
+end
+
 # returns a vector of length N, where each element indicates in which subset that pattern should be included
 # N= Number of patterns, k= number of subsets into which the dataset is to be split
 function crossvalidation(N::Int64, k::Int64)
@@ -681,6 +731,10 @@ function modelCrossValidation(modelType::Symbol,
                 outputs = (outputs' .== vmax);
 
                 metrics = confusionMatrix(outputs, testTargets, weighted=false)
+
+                # Uncomment to test model accuracy
+                #println("Accuracy: ", metrics[1], " Error rate: ", metrics[2]," Sensitivity: ", metrics[3]," Specificity: ", metrics[4]," Fscore: ", metrics[7])
+                #realAccuracy(outputs, testTargets)
                 
                 #return the average of the test results (with the selected metric or metrics) in order to have the test value 
                 #corresponding to this k.
@@ -822,13 +876,27 @@ end
     return (accuracy)
 end
 
+# Check manually the real accuracy value
 function realAccuracy(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1})
     ok=0
     tot=0
     for x in 1:size(outputs,1)
         tot = tot + 1
-        #if (outputs[x,1:11]==targets[x,1:11])
         if (outputs[x]==targets[x])
+            ok = ok + 1
+        end
+    end
+
+    println("Tot: ", tot, " Ok: ", ok, " Acc: ", ok/tot)
+end
+
+# Check manually the real accuracy value
+function realAccuracy(outputs::AbstractArray{<:Bool,2}, targets::AbstractArray{<:Bool,2})
+    ok=0
+    tot=0
+    for x in 1:size(outputs,1)
+        tot = tot + 1
+        if (outputs[x,1:11]==targets[x,1:11])
             ok = ok + 1
         end
     end

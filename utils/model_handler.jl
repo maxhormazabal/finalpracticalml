@@ -12,39 +12,41 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     parameters["maxEpochsVal"] = 20
     parameters["validationRatio"] = 0
 
-    parameters["topology"] = [8,3,1]
+    # Output is the number of classes
+
+    parameters["topology"] = [11,11,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
 
-    parameters["topology"] = [8,4,1]
+    parameters["topology"] = [22,16,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [14,7,1]
+    parameters["topology"] = [44,22,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [16,8,1]
+    parameters["topology"] = [16,8,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [28,14,1]
+    parameters["topology"] = [33,22,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [32,16,8,1]
+    parameters["topology"] = [44,33,22,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [28,14,7,1]
+    parameters["topology"] = [88,44,22,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [16,8,4,1]
+    parameters["topology"] = [32,22,16,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["topology"] = [20,10,5,1]
+    parameters["topology"] = [11,11,11,11]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
@@ -76,10 +78,17 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     # Save the model in disk
     @save path model
 
-    testOutputs = predict(model, test_inputs);
-    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+    # Get prediction and transform outputs
+    outputs = model(test_inputs')
+
+    vmax = maximum(outputs', dims=2);
+    outputs = (outputs' .== vmax);
+
+    oh_targets = oneHotEncoding(test_targets)
+
+    metrics = confusionMatrix(outputs, oh_targets, weighted=false);
      
-     println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
+    println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
      " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
      " FScore: ", metrics[7])
 end
@@ -125,6 +134,12 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     res = evaluateModel(:SVM, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
     
     parameters["C"] = 2;
+    res = evaluateModel(:SVM, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["C"] = 3;
+    res = evaluateModel(:SVM, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["C"] = 4;
     res = evaluateModel(:SVM, parameters, train_inputs, train_targets, kFoldIndices, res)
     
     parameters["C"] = 10;
@@ -256,6 +271,12 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
 
     parameters["max_depth"]=7
     res = evaluateModel(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["max_depth"]=8
+    res = evaluateModel(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["max_depth"]=9
+    res = evaluateModel(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices, res)
   
     # Assign the best kernel and C of previous test to check the rest of the hyperparameters
     parameters["max_depth"] = res[2]["max_depth"];
@@ -295,12 +316,12 @@ function get_Best_DT(train_inputs::AbstractArray{<:Real,2}, train_targets::Abstr
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("max_depth" => 5, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 2)
-    parameters["max_depth"]=5
+    # Best parameters: Dict{Any, Any}("max_depth" => 6, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 4)
+    parameters["max_depth"]=6
     parameters["random_state"]=1
     parameters["criterion"] = "gini"
     parameters["splitter"] = "best"
-    parameters["min_samples_split"] = 2
+    parameters["min_samples_split"] = 4
 
     best_model, = modelCrossValidation(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices)
 
@@ -355,6 +376,15 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 
     parameters["n_neighbors"]=11
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=12
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=13
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=14
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
     
     # Assign the best k of previous test to check the rest of the hyperparameters
     parameters["n_neighbors"] = res[2]["n_neighbors"];
@@ -391,8 +421,8 @@ function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("n_neighbors" => 9, "metric" => "minkowski", "weights" => "uniform")
-    parameters["n_neighbors"]=9
+    # Best parameters: Dict{Any, Any}("n_neighbors" => 11, "metric" => "minkowski", "weights" => "uniform")
+    parameters["n_neighbors"]=11
     parameters["metric"]="minkowski"
     parameters["weights"] = "uniform"
 
