@@ -445,7 +445,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
                 end
             end
         end
-                
+        
         #Aggregate the values of sensitivity, specificity, PPV, NPV, and F-score for eachclass into a single value.
         if (weighted) 
             weighted_stadistics = zeros(numClasses, 5)
@@ -482,9 +482,26 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         classComparison = targets .!= outputs 
         incorrectClassifications = any(classComparison, dims=2)
         error_rate = mean(incorrectClassifications)
-
+        
         return (tot_accuracy, error_rate, sensitivity, specificity, PPV, NPV, fscore, confusion_matrix)
     end
+end
+
+function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    values = classifyOutputs(outputs);
+    
+    confusionMatrix(values, targets, weighted = weighted) 
+end
+
+function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
+    # it is necessary that all the output classes (vector outputs) are included in the desired output classes (vector targets) 
+    @assert(all([in(output, unique(targets)) for output in outputs]))
+    
+    # Use the same list of classes for encoding the same way
+    encoded_targets = oneHotEncoding(targets, unique(targets))
+    encoded_outputs = oneHotEncoding(outputs, unique(targets))
+      
+    return confusionMatrix(encoded_outputs, encoded_targets, weighted=weighted)
 end
 
 # returns a vector of length N, where each element indicates in which subset that pattern should be included
@@ -562,14 +579,14 @@ end
 
 # Creates the model, trains it and return the stadistics
 function modelCrossValidation(modelType::Symbol,
-        modelHyperParameters::Dict,
-        inputs::AbstractArray{<:Real,2},
-        targets::AbstractArray{Bool,2},
-        crossValidationIndices::Array{Int64,1})
-    
+    modelHyperParameters::Dict,
+    inputs::AbstractArray{<:Real,2},
+    targets::AbstractArray{<:Any,1},
+    crossValidationIndices::Array{Int64,1})
+
     # Load inputs and targets
     numFolds = maximum(crossValidationIndices);
-    
+
     model = undef
 
     #Create a vector with k elements, which will contain the test results of the cross-validation process 
@@ -579,17 +596,17 @@ function modelCrossValidation(modelType::Symbol,
     crossvalidationResults_sensitivity = Vector{Float64}(undef, numFolds);
     crossvalidationResults_specificity = Vector{Float64}(undef, numFolds);
     crossvalidationResults_fscore = Vector{Float64}(undef, numFolds);
-    
+
     #ANN is defined inside the loop of folds
     if (modelType == :SVM)
-            # Additional optional parameters
-            coef0 = get(modelHyperParameters, "coef0", 0.0)
-            shrinking = get(modelHyperParameters, "shrinking", true)
-            probability = get(modelHyperParameters, "probability", false)
-            tol = get(modelHyperParameters, "tol", 0.001)
+        # Additional optional parameters
+        coef0 = get(modelHyperParameters, "coef0", 0.0)
+        shrinking = get(modelHyperParameters, "shrinking", true)
+        probability = get(modelHyperParameters, "probability", false)
+        tol = get(modelHyperParameters, "tol", 0.001)
 
         model = SVC(kernel=modelHyperParameters["kernel"], degree=modelHyperParameters["kernelDegree"], 
-            gamma = modelHyperParameters["kernelGamma"], C=modelHyperParameters["C"], tol=tol);
+        gamma = modelHyperParameters["kernelGamma"], C=modelHyperParameters["C"], tol=tol);
     elseif (modelType == :DecisionTree)
         # Additional optional parameters
         criterion = get(modelHyperParameters, "criterion", "gini")
@@ -609,7 +626,7 @@ function modelCrossValidation(modelType::Symbol,
         # k (number of neighbours to be considered)
         model = KNeighborsClassifier(modelHyperParameters["n_neighbors"], weights=weights, metric=metric);
     end
-    
+
     # Make a loop with k iterations (k folds) where, within each iteration, 4 matrices are created 
     # from the desired input and output matrices by means of the index vector resulting from the previous function. 
     # Namely, the desired inputs and outputs for training and test
@@ -663,8 +680,8 @@ function modelCrossValidation(modelType::Symbol,
                 vmax = maximum(outputs', dims=2);
                 outputs = (outputs' .== vmax);
 
-                metrics = confusionMatrix(outputs, testTargets)
-
+                metrics = confusionMatrix(outputs, testTargets, weighted=false)
+                
                 #return the average of the test results (with the selected metric or metrics) in order to have the test value 
                 #corresponding to this k.
                 testANNAccuraciesEachRepetition[numTraining] = metrics[1];# Accuracy
@@ -683,15 +700,15 @@ function modelCrossValidation(modelType::Symbol,
             crossvalidationResults_fscore[numFold] = mean(testANNF1EachRepetition);
         else
             #vec to avoid DataConversionWarning ravel
-            fit!(model, trainingInputs, trainingTargets);
-            testOutputs = predict(model, testInputs);
+            fit!(model, trainingInputs, vec(trainingTargets));
 
-            metrics = confusionMatrix(testOutputs, testTargets, weighted=false);
+            testOutputs = predict(model, testInputs);
+            metrics = confusionMatrix(testOutputs, vec(testTargets), weighted=false);
 
             # Uncomment to test model accuracy
             #println("Accuracy: ", metrics[1], " Error rate: ", metrics[2]," Sensitivity: ", metrics[3]," Specificity: ", metrics[4]," Fscore: ", metrics[7])
-            #realAccuracy(testOutputs, testTargets)
-
+            #realAccuracy(testOutputs, vec(testTargets))
+            
             #Once the model has been trained (several times) on each fold, take the result and fill in the vector(s) 
             #created earlier (one for each metric).
             crossvalidationResults_accuracy[numFold] = metrics[1];# Accuracy
@@ -701,7 +718,7 @@ function modelCrossValidation(modelType::Symbol,
             crossvalidationResults_fscore[numFold] = metrics[7];# Fscore
         end #if type of model
     end #for each fold
-    
+
     #Finally, provide the result of averaging the values of these vectors for each metric together 
     #with their standard deviations.
     accuracy = mean(crossvalidationResults_accuracy)
@@ -709,21 +726,112 @@ function modelCrossValidation(modelType::Symbol,
     sensitivity = mean(crossvalidationResults_sensitivity)
     specificity = mean(crossvalidationResults_specificity)
     fscore = mean(crossvalidationResults_fscore)
-   
+
     #As a result of this call, at least the test value in the selected metric(s) should be returned. 
     #If the model is not deterministic (as is the case for the ANNs), it will be the average of the results of several trainings.
     return (model, [accuracy, errorrate, sensitivity, specificity, fscore]);
 end
 
-function realAccuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
+    function trainClassEnsemble(estimators::AbstractArray{Symbol,1}, 
+        modelsHyperParameters::AbstractArray{Dict, 1},     
+        trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}},    
+        kFoldIndices::Array{Int64,1})
+
+    @assert length(estimators) == length(modelsHyperParameters)
+
+    # Load inputs and targets
+    numFolds = maximum(kFoldIndices);
+
+    #Create a vector with k elements, which will contain the test results of the accuracy process 
+    crossvalidationResults_accuracy = Vector{Float64}(undef, numFolds);
+        
+    for numFold in 1:length(unique(kFoldIndices))
+        # Prepare the data in train test split with CV indices
+        println("Procesing Fold: ", numFold)
+        
+        trainingInputs = trainingDataset[1][kFoldIndices.!=numFold,:];
+        trainingTargets = trainingDataset[2][kFoldIndices.!=numFold,:];
+        testInputs = trainingDataset[1][kFoldIndices.==numFold,:];
+        testTargets = trainingDataset[2][kFoldIndices.==numFold,:];
+        
+        fold_estimators = []
+        for (index,estimator) in enumerate(estimators)
+            #Create the models and store in array
+            if (estimator == :SVM)
+                # Additional optional parameters
+                coef0 =  haskey(modelsHyperParameters[index], "coef0") ? modelsHyperParameters[index]["coef0"] : 0.0
+                shrinking = haskey(modelsHyperParameters[index], "shrinking") ? modelsHyperParameters[index]["shrinking"] : true
+                probability = haskey(modelsHyperParameters[index], "probability") ? modelsHyperParameters[index]["probability"] : false
+                tol = haskey(modelsHyperParameters[index], "tol") ? modelsHyperParameters[index]["tol"] : 0.001
+
+                fold_model = SVC(kernel=modelsHyperParameters[index]["kernel"], degree=modelsHyperParameters[index]["kernelDegree"], 
+                gamma = modelsHyperParameters[index]["kernelGamma"], C=modelsHyperParameters[index]["C"], tol=tol);
+            elseif (estimator == :DecisionTree)
+                # Additional optional parameters
+                criterion = haskey(modelsHyperParameters[index], "criterion") ? modelsHyperParameters[index]["criterion"] : "gini"
+                splitter = haskey(modelsHyperParameters[index], "splitter") ? modelsHyperParameters[index]["splitter"] : "best"
+                min_samples_split = haskey(modelsHyperParameters[index], "min_samples_split") ? modelsHyperParameters[index]["min_samples_split"] : 2
+
+                # Decision trees
+                # Maximum tree depth
+                fold_model = DecisionTreeClassifier(max_depth=modelsHyperParameters[index]["max_depth"], random_state=modelsHyperParameters[index]["random_state"],
+                criterion=criterion, splitter=splitter, min_samples_split=min_samples_split);
+            elseif (estimator == :kNN)
+                # Additional optional parameters
+                weights = haskey(modelsHyperParameters[index], "weights") ? modelsHyperParameters[index]["weights"] : "uniform"
+                metric = haskey(modelsHyperParameters[index], "metric") ? modelsHyperParameters[index]["metric"] : "nan_euclidean"
+
+                # kNN
+                # k (number of neighbours to be considered)
+                fold_model = KNeighborsClassifier(modelsHyperParameters[index]["n_neighbors"], weights=weights, metric=metric);
+            elseif (estimator == :ANN)
+                validationRatio = haskey(modelsHyperParameters[index], "validationRatio") ? modelsHyperParameters[index]["validationRatio"] : 0
+                
+                # (trainingIndices, validationIndices) = holdOut(size(trainingInputs,1), validationRatio*size(trainingInputs,1)/size(trainingDataset[1],1));
+                
+                if validationRatio > 0
+                    fold_model = MLPClassifier(hidden_layer_sizes=modelsHyperParameters[index]["topology"], max_iter=modelsHyperParameters[index]["maxEpochs"],
+                        learning_rate_init=modelsHyperParameters[index]["learningRate"],early_stopping=true, validation_fraction=validationRatio)
+                else
+                    fold_model = MLPClassifier(hidden_layer_sizes=modelsHyperParameters[index]["topology"], max_iter=modelsHyperParameters[index]["maxEpochs"],
+                        learning_rate_init=modelsHyperParameters[index]["learningRate"])
+                end
+            end
+            
+            # vec to avoid DataConversionWarning ravel
+            fit!(fold_model, trainingInputs, vec(trainingTargets));
+
+            # Add model to vector of estimators
+            push!(fold_estimators,(string("Model_", index), fold_model))
+        end # for each estimator
+
+        ensemble_model = VotingClassifier(estimators = [(x[1],x[2]) for x in fold_estimators], n_jobs=-1)
+
+        # Fit the ensemble model and predict using the test set
+        fit!(ensemble_model, trainingInputs, vec(trainingTargets))
+
+        # Ver si usar la matriz de confusion o el valor que dan en la unidad score(model,test_input, test_output)
+        acc = score(ensemble_model, testInputs, testTargets)
+
+        crossvalidationResults_accuracy[numFold] = acc;
+    end # for each fold
+    
+    # Finally, provide the result of averaging the values of these vectors for each metric together with their standard deviations.
+    accuracy = mean(crossvalidationResults_accuracy)
+
+    return (accuracy)
+end
+
+function realAccuracy(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1})
     ok=0
     tot=0
     for x in 1:size(outputs,1)
         tot = tot + 1
-        if (outputs[x,1:11]==targets[x,1:11])
+        #if (outputs[x,1:11]==targets[x,1:11])
+        if (outputs[x]==targets[x])
             ok = ok + 1
         end
     end
 
-    println("Tot: ", tot, " Ok: ", ok)
+    println("Tot: ", tot, " Ok: ", ok, " Acc: ", ok/tot)
 end
