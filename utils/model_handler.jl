@@ -1,6 +1,6 @@
 # Test for the best ANN Model
-function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},   
-    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{Bool,2}, 
+function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1}, 
     kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
@@ -85,7 +85,7 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 end
 
 # Get best knn and train it
-function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},  
+function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
@@ -100,8 +100,8 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
 end
 
 # Test for the best SVM Model
-function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},   
-    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{Bool,2},  
+function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
@@ -199,7 +199,7 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 end
 
 # Get best decition tree and train it
-function get_Best_SVM(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},  
+function get_Best_SVM(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
@@ -219,8 +219,8 @@ function get_Best_SVM(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
 end
 
 # Test for the best decision tree Model
-function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},  
-    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{Bool,2},   
+function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},   
     kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
@@ -291,7 +291,7 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
 end
 
 # Get best decition tree and train it
-function get_Best_DT(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},  
+function get_Best_DT(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
@@ -308,8 +308,8 @@ function get_Best_DT(train_inputs::AbstractArray{<:Real,2}, train_targets::Abstr
 end
 
 # Test for the best KNN Model
-function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},   
-    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{Bool,2},  
+function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1}, path::String)
     parameters = Dict();
 
@@ -387,7 +387,7 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 end
 
 # Get best knn and train it
-function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{Bool,2},  
+function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
@@ -404,7 +404,7 @@ end
 function evaluateModel(modelType::Symbol,
     modelHyperParameters::Dict,
     train_inputs::AbstractArray{<:Real,2},
-    train_targets::AbstractArray{Bool,2},
+    train_targets::AbstractArray{<:Any,1},
     crossValidationIndices::Array{Int64,1}, 
     previousModel::Tuple{Float64, Dict})
 
