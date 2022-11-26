@@ -264,7 +264,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
         errorrate = 0
     end
     
-    if (FN+TP) > 0
+    if (FN+TP) > 0 # Sensitivity or recall
         if TN!=numInstances
             sensitivity = TP/(FN+TP)  
         else 
@@ -284,7 +284,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
         specificity = 0
     end
         
-    if (TP+FP) > 0
+    if (TP+FP) > 0 # Precision
         if TN!=numInstances
             PPV = TP/(TP+FP)  
         else 
@@ -313,12 +313,6 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     end
     
     return (accuracy, errorrate, sensitivity, specificity, PPV, NPV, Fscore, confMatrix)
-end
-
-# Calculate the confusion matrix and its stadistics
-function confusionMatrix(outputs::AbstractArray{<:Real,1},targets::AbstractArray{Bool,1}; threshold::Real=0.5)
-    binary_outputs = outputs.>= threshold;
-    return confusionMatrix(binary_outputs, targets)
 end
 
 #Receives two lists of boolean and returns the average of equal values between them
@@ -420,13 +414,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             
             #if there are patterns in that class
             if (count(outputs_class) > 0 || count(targets_class) > 0)
-                # println(outputs_class)
-                # println(targets_class)
-                
-                # make a call to the confusionMatrix function of the previous assignment 
-                # passing as vectors the columns corresponding to the class of that iteration of the outputs and targets matrices. 
                 res = confusionMatrix(vec(outputs_class), vec(targets_class))
-                # printConfusionMatrix(res)
                 
                 #Assign the result to the corresponding element of the sensitivity, specificity, PPV, NPV and F1 vectors.
                 stadistics[numClass,1] = res[3] # Sensitivity
@@ -436,8 +424,6 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
                 stadistics[numClass,5] = res[7] # F-score
             end
         end
-        
-        # println("Stadistics: ", stadistics)
         
         #Reserve memory for the confusion matrix.
         confusion_matrix = zeros(numClasses, numClasses)
@@ -459,9 +445,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
                 end
             end
         end
-        
-        # println("Partial confusion matrix: ",confusion_matrix)
-        
+                
         #Aggregate the values of sensitivity, specificity, PPV, NPV, and F-score for eachclass into a single value.
         if (weighted) 
             weighted_stadistics = zeros(numClasses, 5)
@@ -498,28 +482,10 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         classComparison = targets .!= outputs 
         incorrectClassifications = any(classComparison, dims=2)
         error_rate = mean(incorrectClassifications)
-        
+
         return (tot_accuracy, error_rate, sensitivity, specificity, PPV, NPV, fscore, confusion_matrix)
     end
 end
-
-function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    values = classifyOutputs(outputs);
-    confusionMatrix(values, targets, weighted = weighted) 
-end
-
-function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
-    # it is necessary that all the output classes (vector outputs) are included in the desired output classes (vector targets) 
-    @assert(all([in(output, unique(targets)) for output in outputs]))
-    # Use the same list of classes for encoding the same way
-    encoded_targets = oneHotEncoding(targets, unique(targets))
-    encoded_outputs = oneHotEncoding(outputs, unique(targets))
-      
-    return confusionMatrix(encoded_outputs, encoded_targets, weighted=weighted)
-end
-
-# Unit 5
-
 
 # returns a vector of length N, where each element indicates in which subset that pattern should be included
 # N= Number of patterns, k= number of subsets into which the dataset is to be split
@@ -648,7 +614,6 @@ function modelCrossValidation(modelType::Symbol,
     # from the desired input and output matrices by means of the index vector resulting from the previous function. 
     # Namely, the desired inputs and outputs for training and test
     for numFold in 1:numFolds
-        #println("Procesing Fold: ", numFold)
         trainingInputs = inputs[kFoldIndices.!=numFold,:];
         trainingTargets = targets[kFoldIndices.!=numFold,:];
         testInputs = inputs[kFoldIndices.==numFold,:];
