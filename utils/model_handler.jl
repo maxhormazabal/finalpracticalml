@@ -99,9 +99,15 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     parameters = Dict();
 
     # Best parameters: Dict{Any, Any}("n_neighbors" => 9, "metric" => "minkowski", "weights" => "uniform")
-    parameters["n_neighbors"]=9
-    parameters["metric"]="minkowski"
-    parameters["weights"] = "uniform"
+    parameters["maxEpochs"] = 1000
+    parameters["minLoss"] = 0.0
+    parameters["learningRate"] = 0.01
+    parameters["repetitionsTraining"] = 5
+    parameters["maxEpochsVal"] = 20
+    parameters["validationRatio"] = 0
+
+    parameters["topology"] = [11,11,11]
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
 
     best_model, = modelCrossValidation(:ANN, parameters, train_inputs, train_targets, kFoldIndices)
 
@@ -218,10 +224,10 @@ function get_Best_SVM(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("max_depth" => 5, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 2)
-    parameters["tol"]=0.01
-    parameters["kernelGamma"]=3
-    parameters["C"] = 10
+    # Best parameters: Dict{Any, Any}("tol" => 0.001, "kernelGamma" => 2, "C" => 1, "kernel" => "poly", "shrinking" => true, "probability" => false, "coef0" => 0.0, "kernelDegree" => 3)
+    parameters["tol"]=0.001
+    parameters["kernelGamma"]=2
+    parameters["C"] = 1
     parameters["kernel"] = "poly"
     parameters["shrinking"] = true
     parameters["probability"] = false
@@ -292,6 +298,9 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
     res = evaluateModel(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices, res)
     
     parameters["min_samples_split"] = 3;
+    res = evaluateModel(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["min_samples_split"] = 5;
     res = evaluateModel(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     println("//////////////////////////////////////////")
@@ -377,15 +386,24 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     parameters["n_neighbors"]=11
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["n_neighbors"]=12
+    parameters["n_neighbors"]=20
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["n_neighbors"]=13
+    parameters["n_neighbors"]=45
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["n_neighbors"]=14
+    parameters["n_neighbors"]=50
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-    
+
+    parameters["n_neighbors"]=55
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=60
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=70
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+   
     # Assign the best k of previous test to check the rest of the hyperparameters
     parameters["n_neighbors"] = res[2]["n_neighbors"];
 
@@ -421,8 +439,8 @@ function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("n_neighbors" => 11, "metric" => "minkowski", "weights" => "uniform")
-    parameters["n_neighbors"]=11
+    # Best parameters: Dict{Any, Any}("n_neighbors" => 14, "metric" => "minkowski", "weights" => "uniform")
+    parameters["n_neighbors"]=14
     parameters["metric"]="minkowski"
     parameters["weights"] = "uniform"
 

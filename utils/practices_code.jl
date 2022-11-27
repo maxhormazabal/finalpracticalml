@@ -1,12 +1,12 @@
-function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2})
+function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Any,2})
     mins = minimum(dataset, dims=1)
     maxs = maximum(dataset, dims=1)
    
-    return convert(NTuple{2, AbstractArray{<:Real,2}}, (mins, maxs))
+    return convert(NTuple{2, AbstractArray{<:Any,2}}, (mins, maxs))
 end
 
-function normalizeMinMax!(dataset::AbstractArray{<:Real,2},      
-        normalizationParameters::NTuple{2, AbstractArray{<:Real,2}})
+function normalizeMinMax!(dataset::AbstractArray{<:Any,2},      
+        normalizationParameters::NTuple{2, AbstractArray{<:Any,2}})
     
     #Get maximum and minimun as vector for use in comparison
     max = vec(normalizationParameters[2])
@@ -16,19 +16,19 @@ function normalizeMinMax!(dataset::AbstractArray{<:Real,2},
     dataset = (dataset.-(max == min ? 0 : normalizationParameters[1]))./(max == min ? 1 : normalizationParameters[2]-normalizationParameters[1])
 end
 
-function normalizeMinMax!(dataset::AbstractArray{<:Real,2})
+function normalizeMinMax!(dataset::AbstractArray{<:Any,2})
     normalizeMinMax!(dataset, calculateMinMaxNormalizationParameters(dataset))
 end
 
-function normalizeMinMax(dataset::AbstractArray{<:Real,2},      
-                normalizationParameters::NTuple{2, AbstractArray{<:Real,2}}) 
+function normalizeMinMax(dataset::AbstractArray{<:Any,2},      
+                normalizationParameters::NTuple{2, AbstractArray{<:Any,2}}) 
     
     ds = copy(dataset)
     normalizeMinMax!(ds, normalizationParameters)
     return ds
 end
 
-function normalizeMinMax(dataset::AbstractArray{<:Real,2})
+function normalizeMinMax(dataset::AbstractArray{<:Any,2})
     ds = copy(dataset)
     
     normalizeMinMax(ds, calculateMinMaxNormalizationParameters(ds))
@@ -896,7 +896,7 @@ function realAccuracy(outputs::AbstractArray{<:Bool,2}, targets::AbstractArray{<
     tot=0
     for x in 1:size(outputs,1)
         tot = tot + 1
-        if (outputs[x,1:11]==targets[x,1:11])
+        if (outputs[x,:]==targets[x,:])
             ok = ok + 1
         end
     end
