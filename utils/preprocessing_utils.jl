@@ -68,3 +68,12 @@ function durationToSeconds(columnToNormalize::Any)
     return columnToNormalize
 end
 
+function categoricalToNumericDataFrame(column,colname)
+    column_dict = Dict()
+    for value in levels(column)
+        colValues = (column .== value)
+        name = string(colname,value)
+        column_dict[name] = colValues
+    end
+    return DataFrame(column_dict)
+end
