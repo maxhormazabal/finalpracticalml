@@ -367,47 +367,29 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     
     parameters["n_neighbors"]=1
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
-    parameters["n_neighbors"]=4
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-    
+ 
     parameters["n_neighbors"]=5
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
     
-    parameters["n_neighbors"]=6
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
     parameters["n_neighbors"]=7
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
-    parameters["n_neighbors"]=8
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
-    parameters["n_neighbors"]=9
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["n_neighbors"]=10
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["n_neighbors"]=11
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
     parameters["n_neighbors"]=20
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
-    parameters["n_neighbors"]=45
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
     parameters["n_neighbors"]=50
-    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
-
-    parameters["n_neighbors"]=55
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["n_neighbors"]=60
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["n_neighbors"]=70
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=80
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
    
     # Assign the best k of previous test to check the rest of the hyperparameters
