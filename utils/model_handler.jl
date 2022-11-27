@@ -91,6 +91,8 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
      " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
      " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
 end
 
 # Get best knn and train it
@@ -214,9 +216,11 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
      
-     println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
+    println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
      " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
      " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
 end
 
 # Get best decition tree and train it
@@ -318,6 +322,8 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
     println("Test: Accuracy: ", metrics[1], " Error rate: ", metrics[2], 
     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
 end
 
 # Get best decition tree and train it
@@ -432,6 +438,8 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     println("Test: Accuracy: ", metrics[1],  
      " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
      " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
 end
 
 # Get best knn and train it
