@@ -77,3 +77,29 @@ function categoricalToNumericDataFrame(column,colname)
     end
     return DataFrame(column_dict)
 end
+
+function pcaTranformation(pca_df)
+    numrow = size(pca_dataframe,1)
+    numcol = size(pca_dataframe,2)
+    
+    indices = holdOut(numrow,0.2)
+    train_input = pca_dataframe[indices[1],1:numcol-1]
+    train_output = vec(pca_dataframe[indices[1],"Class"])
+    
+    test_input = pca_dataframe[indices[2],1:numcol-1]
+    test_output = vec(pca_dataframe[indices[2],"Class"])
+    
+    train_input = normalizeMinMax!(Matrix(train_input))
+    test_input = normalizeMinMax!(Matrix(test_input))
+    
+    pca = PCA(0.95)
+    pca.fit(train_input)
+    
+    pca_train = pca.transform(train_input)
+    pca_test = pca.transform(test_input)
+    
+    println("Train Patterns ", size(train_input), " -> ", size(pca_train))
+    println("Test Patterns ", size(test_input), " -> ", size(pca_test))
+
+    return (train_input,train_output,test_input,test_output)
+end
