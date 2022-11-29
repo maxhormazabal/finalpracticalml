@@ -1,7 +1,7 @@
 # Test for the best ANN Model
 function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1}, 
-    kFoldIndices::Array{Int64,1}, update_file::bool, path::String)
+    kFoldIndices::Array{Int64,1}, transfer_function::Any, update_file::Bool, path::String)
     parameters = Dict();
 
     # For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
@@ -15,39 +15,39 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     # Output is the number of classes
 
     parameters["topology"] = [8,8,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
 
     parameters["topology"] = [16,12,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [32,16,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [16,4,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [24,16,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [32,24,16,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [64,32,16,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [20,16,12,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["topology"] = [8,8,8,8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     # Assign the best topology of previous test to check some others hyperparameters
@@ -64,6 +64,9 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
 
     # Transfer functions
     parameters["transferFunctions"] = fill(sigmoid, length(parameters["topology"]))
+    res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["transferFunctions"] = fill(tanh_fast, length(parameters["topology"]))
@@ -121,7 +124,7 @@ end
 # Test for the best SVM Model
 function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
-    kFoldIndices::Array{Int64,1}, update_file::bool, path::String)
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
     parameters = Dict();
 
     # For SVM, test with different kernels and values of C. At least 8 SVM hyperparameter configurations.
@@ -250,7 +253,7 @@ end
 # Test for the best decision tree Model
 function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},   
-    kFoldIndices::Array{Int64,1}, update_file::bool, path::String)
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
     parameters = Dict();
 
     # For decision trees, test at least 6 different depth values.
@@ -352,7 +355,7 @@ end
 # Test for the best KNN Model
 function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
-    kFoldIndices::Array{Int64,1}, path::String)
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
     parameters = Dict();
 
     # For kNN, test at least 6 different k values.
@@ -396,6 +399,9 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
 
     parameters["n_neighbors"]=80
+    res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["n_neighbors"]=100
     res = evaluateModel(:kNN, parameters, train_inputs, train_targets, kFoldIndices, res)
    
     # Assign the best k of previous test to check the rest of the hyperparameters
