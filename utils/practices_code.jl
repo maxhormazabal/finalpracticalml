@@ -685,6 +685,12 @@ function modelCrossValidation(modelType::Symbol,
             model = MLPClassifier(hidden_layer_sizes=modelHyperParameters["topology"], max_iter=modelHyperParameters["maxEpochs"],
                 learning_rate_init=modelHyperParameters["learningRate"],early_stopping=true)
         end
+    elseif (modelType == :GB)    
+        model = GaussianNB()
+    elseif (modelType == :LR)    
+        max_iter = get(modelHyperParameters,"max_iter",100)
+
+        model = LogisticRegression(max_iter=max_iter)
     end
 
     # Make a loop with k iterations (k folds) where, within each iteration, 4 matrices are created 
