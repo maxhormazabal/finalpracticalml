@@ -666,7 +666,7 @@ function modelCrossValidation(modelType::Symbol,
         # Decision trees
         # Maximum tree depth
         model = DecisionTreeClassifier(max_depth=modelHyperParameters["max_depth"], random_state=modelHyperParameters["random_state"],
-            criterion=criterion, splitter=splitter, min_samples_split=min_samples_split);
+            criterion=criterion, splitter=splitter, min_samples_split=min_samples_split)
     elseif (modelType == :kNN)
         # Additional optional parameters
         weights = get(modelHyperParameters, "weights", "uniform")
@@ -674,7 +674,17 @@ function modelCrossValidation(modelType::Symbol,
 
         # kNN
         # k (number of neighbours to be considered)
-        model = KNeighborsClassifier(modelHyperParameters["n_neighbors"], weights=weights, metric=metric);
+        model = KNeighborsClassifier(modelHyperParameters["n_neighbors"], weights=weights, metric=metric)
+    elseif (modelType == :MLP)    
+        validationRatio = get(modelHyperParameters, "validationRatio", convert(Float64, 0.0))
+        
+        if (validationRatio > 0)
+            model = MLPClassifier(hidden_layer_sizes=modelHyperParameters["topology"], max_iter=modelHyperParameters["maxEpochs"],
+                learning_rate_init=modelHyperParameters["learningRate"],early_stopping=true, validation_fraction=validationRatio)
+        else
+            model = MLPClassifier(hidden_layer_sizes=modelHyperParameters["topology"], max_iter=modelHyperParameters["maxEpochs"],
+                learning_rate_init=modelHyperParameters["learningRate"],early_stopping=true)
+        end
     end
 
     # Make a loop with k iterations (k folds) where, within each iteration, 4 matrices are created 
@@ -786,7 +796,7 @@ function modelCrossValidation(modelType::Symbol,
     return (model, [accuracy, errorrate, sensitivity, specificity, fscore]);
 end
 
-    function trainClassEnsemble(estimators::AbstractArray{Symbol,1}, 
+function trainClassEnsemble(estimators::AbstractArray{Symbol,1}, 
         modelsHyperParameters::AbstractArray{Dict, 1},     
         trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}},    
         kFoldIndices::Array{Int64,1})

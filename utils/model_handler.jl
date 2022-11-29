@@ -113,7 +113,7 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     parameters["maxEpochsVal"] = 20
     parameters["validationRatio"] = 0
 
-    parameters["topology"] = [2, 24, 16, 8]
+    parameters["topology"] = [32, 24, 16, 8]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
 
     best_model, = modelCrossValidation(:ANN, parameters, train_inputs, train_targets, kFoldIndices)
@@ -451,6 +451,99 @@ function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     parameters["weights"] = "uniform"
 
     best_model, = modelCrossValidation(:kNN, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
+# Test for the best MLP Model
+function test_MLP_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1}, 
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
+    parameters = Dict();
+
+    # For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
+    parameters["validationRatio"] = 0.0
+    parameters["maxEpochs"] = 1000
+    parameters["learningRate"] = 0.01
+    parameters["activation"] = "relu" # activation{'identity', 'logistic', 'tanh', 'relu'}
+    
+    parameters["topology"] = (8,8,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
+
+    parameters["topology"] = (16,12,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (32,16,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (16,4,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (24,16,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (32,24,16,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (64,32,16,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (20,16,12,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (8,8,8,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["topology"] = (64,32,24,16,8)
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    # Assign the best topology of previous test to check some others hyperparameters
+    parameters["topology"] = res[2]["topology"];
+
+    # Learning rate   
+    parameters["learningRate"] = 0.1
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["learningRate"] = 0.001
+    res = evaluateModel(:MLP, parameters, train_inputs, train_targets, kFoldIndices, res)
+
+    parameters["learningRate"] = 0.01
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:MLP, res[2], train_inputs, train_targets, kFoldIndices)
+    
+    # Save the model in disk
+    if update_file
+        @save path model
+    end
+
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best knn and train it
+function get_Best_MLP(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+
+    # Best parameters: 
+    parameters["maxEpochs"] = 1000
+    parameters["learningRate"] = 0.01
+    parameters["validationRatio"] = 0
+    parameters["activation"] = "relu"
+
+    parameters["topology"] = (32, 24, 16, 8)
+
+    best_model, = modelCrossValidation(:MLP, parameters, train_inputs, train_targets, kFoldIndices)
 
     return best_model
 end
