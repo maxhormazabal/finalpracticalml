@@ -1,7 +1,7 @@
 # Test for the best ANN Model
 function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1}, 
-    kFoldIndices::Array{Int64,1}, path::String)
+    kFoldIndices::Array{Int64,1}, update_file::bool, path::String)
     parameters = Dict();
 
     # For ANNs, test at least 8 different architectures, between one and 2 hidden layers.
@@ -76,7 +76,9 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     model, = modelCrossValidation(:ANN, res[2], train_inputs, train_targets, kFoldIndices)
     
     # Save the model in disk
-    @save path model
+    if update_file
+        @save path model
+    end
 
     # Get prediction and transform outputs
     outputs = model(test_inputs')
@@ -100,7 +102,7 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("n_neighbors" => 9, "metric" => "minkowski", "weights" => "uniform")
+    # Best parameters: Dict{Any, Any}("repetitionsTraining" => 3, "maxEpochs" => 500, "learningRate" => 0.01, "topology" => [32, 24, 16, 8], "validationRatio" => 0, "maxEpochsVal" => 20, "minLoss" => 0.0, "transferFunctions" => [NNlib.σ, NNlib.σ, NNlib.σ, NNlib.σ]) Best accuracy: 0.1517375907273691
     parameters["maxEpochs"] = 1000
     parameters["minLoss"] = 0.0
     parameters["learningRate"] = 0.01
@@ -108,7 +110,7 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     parameters["maxEpochsVal"] = 20
     parameters["validationRatio"] = 0
 
-    parameters["topology"] = [11,11,11]
+    parameters["topology"] = [2, 24, 16, 8]
     parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
 
     best_model, = modelCrossValidation(:ANN, parameters, train_inputs, train_targets, kFoldIndices)
@@ -119,7 +121,7 @@ end
 # Test for the best SVM Model
 function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
-    kFoldIndices::Array{Int64,1}, path::String)
+    kFoldIndices::Array{Int64,1}, update_file::bool, path::String)
     parameters = Dict();
 
     # For SVM, test with different kernels and values of C. At least 8 SVM hyperparameter configurations.
@@ -210,8 +212,10 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
     model, = modelCrossValidation(:SVM, res[2], train_inputs, train_targets, kFoldIndices)
     
-    # Save the model in disk
-    @save path model
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
 
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
@@ -246,7 +250,7 @@ end
 # Test for the best decision tree Model
 function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},   
-    kFoldIndices::Array{Int64,1}, path::String)
+    kFoldIndices::Array{Int64,1}, update_file::bool, path::String)
     parameters = Dict();
 
     # For decision trees, test at least 6 different depth values.
@@ -313,8 +317,10 @@ function test_DT_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
     model, = modelCrossValidation(:DecisionTree, res[2], train_inputs, train_targets, kFoldIndices)
     
-    # Save the model in disk
-    @save path model
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
 
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
@@ -411,8 +417,10 @@ function test_KNN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
     model, = modelCrossValidation(:kNN, res[2], train_inputs, train_targets, kFoldIndices)
 
-    # Save the model in disk
-    @save path model
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
 
     testOutputs = predict(model, test_inputs);
     metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
