@@ -205,6 +205,8 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     parameters["kernelGamma"] = 3;
     res = evaluateModel(:SVM, parameters, train_inputs, train_targets, kFoldIndices, res)
     
+    parameters["kernelGamma"] = 2;
+
     # Tolerance for stopping criterion
     parameters["tol"] = 0.01;
     res = evaluateModel(:SVM, parameters, train_inputs, train_targets, kFoldIndices, res)
