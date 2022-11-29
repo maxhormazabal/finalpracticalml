@@ -596,6 +596,7 @@ function test_LR_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
     parameters = Dict();
 
     parameters["max_iter"] = 1000
+    parameters["multi_class"]="multinomial"
     
     println("Test results for LR model: ")
 
@@ -639,6 +640,129 @@ function get_Best_LR(train_inputs::AbstractArray{<:Real,2}, train_targets::Abstr
     parameters["max_iter"] = 500
 
     best_model, = modelCrossValidation(:LR, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
+# Test for the best NC Model
+function test_NC_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
+    parameters = Dict();
+    
+    println("Test results for NC model: ")
+
+    res = evaluateModel(:NC, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:NC, res[2], train_inputs, train_targets, kFoldIndices)
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best nc and train it
+function get_Best_NC(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+    
+    best_model, = modelCrossValidation(:NC, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
+# Test for the best RN Model
+function test_RN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
+    parameters = Dict();
+    
+    println("Test results for RN model: ")
+
+    res = evaluateModel(:RN, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:RN, res[2], train_inputs, train_targets, kFoldIndices)
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best rn and train it
+function get_Best_RN(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+    
+    best_model, = modelCrossValidation(:RN, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
+# Test for the best RC Model
+function test_RC_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+    test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
+    parameters = Dict();
+    
+    println("Test results for RC model: ")
+
+    res = evaluateModel(:RC, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
+    model, = modelCrossValidation(:RC, res[2], train_inputs, train_targets, kFoldIndices)
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best gb and train it
+function get_Best_RC(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+    kFoldIndices::Array{Int64,1})
+    parameters = Dict();
+    
+    best_model, = modelCrossValidation(:RC, parameters, train_inputs, train_targets, kFoldIndices)
 
     return best_model
 end

@@ -689,8 +689,15 @@ function modelCrossValidation(modelType::Symbol,
         model = GaussianNB()
     elseif (modelType == :LR)    
         max_iter = get(modelHyperParameters,"max_iter",100)
+        multi_class = get(modelHyperParameters,"multi_class","multinomial")
 
-        model = LogisticRegression(max_iter=max_iter)
+        model = LogisticRegression(max_iter=max_iter, multi_class=multi_class)
+    elseif (modelType == :NC)    
+        model = NearestCentroid()
+    elseif (modelType == :RN)    
+        model = RadiusNeighborsClassifier()
+    elseif (modelType == :RC)    
+        model = RidgeClassifier()
     end
 
     # Make a loop with k iterations (k folds) where, within each iteration, 4 matrices are created 
