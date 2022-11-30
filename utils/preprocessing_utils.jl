@@ -103,3 +103,21 @@ function pcaTranformation(pca_df)
 
     return (train_input,train_output,test_input,test_output)
 end
+
+function generateBoxplots(df,boxplot_names)
+    bplots = []
+
+    for (index,colname) in enumerate(boxplot_names)
+        current_col = skipmissing(df[:,colname])
+        col_range = maximum(current_col) - minimum(current_col)
+        min_lim = minimum(current_col)-0.2*col_range
+        max_lim = maximum(current_col)+0.3*col_range
+        b = boxplot([uppercasefirst(colname)],current_col,
+            leg=false;notch=true,
+            ylim=(min_lim,max_lim),
+            width = 0.8,
+            color = ifelse.(index%2 == 0, "#F2542D", "#127475"))
+        push!(bplots,b)
+    end
+    return bplots
+end
