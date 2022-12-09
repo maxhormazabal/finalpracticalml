@@ -1,3 +1,6 @@
+# Legacy code generated in practice classes
+
+# Calculate the normalization parameters for Minimum and Maximum
 function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Any,2})
     mins = minimum(dataset, dims=1)
     maxs = maximum(dataset, dims=1)
@@ -5,21 +8,24 @@ function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Any,2})
     return convert(NTuple{2, AbstractArray{<:Any,2}}, (mins, maxs))
 end
 
+# Normalize the dataset with Min and Max
 function normalizeMinMax!(dataset::AbstractArray{<:Any,2},      
         normalizationParameters::NTuple{2, AbstractArray{<:Any,2}})
     
-    #Get maximum and minimun as vector for use in comparison
+    # Get maximum and minimun as vector for use in comparison
     max = vec(normalizationParameters[2])
     min = vec(normalizationParameters[1])
     
-    #Normalization formula v'=(v-min)/(max-min). If max equals to min, no normalization is required so constants are used.
+    # Normalization formula v'=(v-min)/(max-min). If max equals to min, no normalization is required so constants are used.
     dataset = (dataset.-(max == min ? 0 : normalizationParameters[1]))./(max == min ? 1 : normalizationParameters[2]-normalizationParameters[1])
 end
 
+# Normalize the dataset with Min and Max
 function normalizeMinMax!(dataset::AbstractArray{<:Any,2})
     normalizeMinMax!(dataset, calculateMinMaxNormalizationParameters(dataset))
 end
 
+# Normalize the dataset with Min and Max without altering the original dataset
 function normalizeMinMax(dataset::AbstractArray{<:Any,2},      
                 normalizationParameters::NTuple{2, AbstractArray{<:Any,2}}) 
     
@@ -28,6 +34,7 @@ function normalizeMinMax(dataset::AbstractArray{<:Any,2},
     return ds
 end
 
+# Normalize the dataset with Min and Max without altering the original dataset
 function normalizeMinMax(dataset::AbstractArray{<:Any,2})
     ds = copy(dataset)
     
@@ -35,6 +42,7 @@ function normalizeMinMax(dataset::AbstractArray{<:Any,2})
     return ds
 end
 
+# One hot encode the values of the dataset
 function oneHotEncoding(feature::AbstractArray{<:Any,1},      
         classes::AbstractArray{<:Any,1})
 
@@ -53,12 +61,15 @@ function oneHotEncoding(feature::AbstractArray{<:Any,1},
     return oneHot;
 end;
 
+# One hot encode the values of the dataset
 oneHotEncoding(feature::AbstractArray{<:Any,1}) = oneHotEncoding(feature, unique(feature))
 
+# One hot encode the values of the dataset
 function oneHotEncoding(feature::AbstractArray{Bool,1})
     return oneHotEncoding(feature, unique(feature))
 end
 
+# Build an ANN model with the number of neurons and functions specified by the user
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
                     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology))) 
     ann = Chain();
@@ -73,30 +84,36 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
             numInputsLayer = numOutputsLayer; 
         end
     else
-        #If no layer, use an identity
+        # If no layer, use an identity
         ann = Chain(ann..., Dense(numInputsLayer, numOutputs, identity));   
     end
     
+    # If is a multiclass problem, use softmax
     if numOutputs > 1
         ann = Chain(ann...,  softmax)
 	else
+        # If is a binary problem, use identity
 		ann = Chain(ann...,  identity)
     end
     
     return ann;
 end
 
-#N=number of patterns, P=Percentage of patters separated
-# by using randperm along side with usign random, we guarantee that 
+# Get the hould out indexes
+# N=number of patterns, P=Percentage of patters separated
 function holdOut(N::Int, P::Real)
-    # Assure that the function have repeatable results for splitting, Random.seed! was used inside the function and assign any constant value
+    # Assure that the function have repeatable results for splitting
     Random.seed!(2)
+
     @assert ((P>=0.) & (P<=1.));
+    
+    # by using randperm along side with usign random, we guarantee that the values are correct
     indices = randperm(N)
     n_train = Int(round((1 - P)*N))
     return (indices[1:n_train],indices[n_train+1:end])
 end
 
+# Get the hould out indexes
 function holdOut(N::Int, Pval::Real, Ptest::Real)
     #Check that Pval and Ptest contain values between 0 and 1,
     # as well as the sum of both values should be lower or equal to 1.
@@ -107,34 +124,32 @@ function holdOut(N::Int, Pval::Real, Ptest::Real)
     # First, separate dataset into training+validation and test using previous holdOut method
     dataset_tr_val_tst = holdOut(N, Ptest);
 
-    # You must also adjust the ratio applied in the second call of the function.
-    # For example, it is not the same Ptest=0.2 over the whole dataset than over just the training+validation set. You have
-    # to "adjust" it.
-    # Remove test information from the variable and recalculate
+    # Adjust the ratio applied in the second call of the function.
     N_tr_val=N-length(dataset_tr_val_tst[2])
     Pval_tr_val=N*Pval/N_tr_val
     
-    # Then, separate training+validation into training and validation using again previous holdOut method.
+    # Separate training+validation into training and validation using again previous holdOut method.
     dataset_tr_val = holdOut(N_tr_val, Pval_tr_val);
     
     dataset_tr = dataset_tr_val_tst[1][1:length(dataset_tr_val[1])]
     dataset_val = dataset_tr_val_tst[1][length(dataset_tr_val[1])+1:length(dataset_tr_val_tst[1])]
       
     # Keep in mind that the indexes from the return tuple must be used to obtain the elements from the training+validation set.
-    # Otherwise, you will have repeated indexes in the sets.
     return (dataset_tr,dataset_val,dataset_tr_val_tst[2])
 end
 
+# Calculate loss values of the datasets
 function calculateLossValues()
     trainingLoss = loss(trainingInputs', trainingTargets');
     validationLoss = loss(validationInputs', validationTargets');
     testLoss = loss(testInputs', testTargets');
-    #(trainingLoss, validationLoss, _) = calculateLossValues();
+    
     push!(trainingLosses, trainingLoss);
     push!(validationLosses, validationLoss);
     push!(testLosses, testLoss);
 end
 
+# Create and train an ANN model
 function trainClassANN(topology::AbstractArray{<:Int,1},  
             trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}; 
             validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}= 
@@ -227,6 +242,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     return (bestAnn,[trainingLosses, validationLosses, testLosses]);
 end
 
+# Create and train an ANN model
 function trainClassANN(topology::AbstractArray{<:Int,1},  
         trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}; 
         validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}= 
@@ -249,6 +265,8 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     numInstances = length(targets);
     @assert(length(outputs)==numInstances);
     @assert(numInstances>0);
+
+    # Calculate the True and False negatives and positives
     TN = sum(.!outputs .& .!targets);
     FN = sum(.!outputs .& targets);
     TP = sum( outputs .& targets);
@@ -284,7 +302,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
         specificity = 0
     end
         
-    if (TP+FP) > 0 # Precision
+    if (TP+FP) > 0 # Precision or positive predictive value
         if TN!=numInstances
             PPV = TP/(TP+FP)  
         else 
@@ -315,13 +333,13 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     return (accuracy, errorrate, sensitivity, specificity, PPV, NPV, Fscore, confMatrix)
 end
 
-#Receives two lists of boolean and returns the average of equal values between them
+# Receives two lists of boolean and returns the average of equal values between them
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1}) 
     tot = length(outputs[outputs .== targets])
     return tot / length(outputs)
 end
 
-#Receives two lists of boolean and returns the average of equal values between them
+# Receives two lists of boolean and returns the average of equal values between them
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}) 
     if (size(outputs)[:2]>1)
         classComparison = targets .!= outputs 
@@ -332,6 +350,7 @@ function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}
     end
 end
 
+# Returns the accuracy of the values
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1};      
                 threshold::Real=0.5)
     
@@ -345,6 +364,7 @@ function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,
     return tot / length(result)
 end
 
+# Returns the accuracy of the values
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2};
                 threshold::Real=0.5)
     
@@ -356,6 +376,7 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
     end    
 end
 
+# Returns the classification of the values
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; 
                         threshold::Real=0.5) 
 
@@ -384,19 +405,17 @@ end
 # Returns the values of the metrics adapted to the condition of having more than two classes
 # outputs=prediction, targets=actual values
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    # The first thing this function should do is to check that the number of columns of both matrices is equal 
+    # Check that the number of columns of both matrices is equal 
     @assert(size(outputs, 2)==size(targets, 2));
     # and is different from 2. 
     @assert(size(outputs, 2)!=2);
     @assert(size(targets, 2)!=2);
     
-    # In case they have only one column, these columns are taken as vectors and the confusion Matrix function 
-    # developed in the previous assignment is called.
+    # In case they have only one column, these columns are taken as vectors and the confusion Matrix previous is called.
     if (size(outputs, 2)==1)
         return confusionMatrix(vec(outputs), vec(targets))
     else
         #Gets the number of classes
-        #numClasses = size(unique(targets, dims=1),1)
         numClasses = size(outputs, 2)
         
         # Reserve memory for the sensitivity, specificity, PPV, NPV and F-score vectors, 
@@ -425,10 +444,10 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             end
         end
         
-        #Reserve memory for the confusion matrix.
+        # Reserve memory for the confusion matrix.
         confusion_matrix = zeros(numClasses, numClasses)
         
-        #Perform a double loop in which booth loops iterate over the classes, to fill all the confusion matrix elements.
+        # Perform a double loop in which booth loops iterate over the classes, to fill all the confusion matrix elements.
         for numRow in 1:numClasses
             targets_class=targets[:,[numRow]][:]
             
@@ -446,7 +465,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             end
         end
         
-        #Aggregate the values of sensitivity, specificity, PPV, NPV, and F-score for eachclass into a single value.
+        # Aggregate the values of sensitivity, specificity, PPV, NPV, and F-score for eachclass into a single value.
         if (weighted) 
             weighted_stadistics = zeros(numClasses, 5)
             # Weighted. In this stratey, the metrics corresponding to each class are averaged, weighting them with the number 
@@ -487,12 +506,14 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     end
 end
 
+# Return the confusion matrix of the values
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     values = classifyOutputs(outputs);
     
     confusionMatrix(values, targets, weighted = weighted) 
 end
 
+# Return the confusion matrix of the values
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     # it is necessary that all the output classes (vector outputs) are included in the desired output classes (vector targets) 
     @assert(all([in(output, unique(targets)) for output in outputs]))
@@ -572,6 +593,7 @@ function crossvalidation(N::Int64, k::Int64)
     return indices;
 end
 
+# Returns the cross validation indexes
 # targets: desired outputs, k: number of subsets in which the dataset will be split
 # returns a vector of length N (equal to the number of rows of targets)
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
@@ -584,29 +606,13 @@ function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     
     for numClass in 1:numClasses
         indices[targets[:, numClass]]=crossvalidation(sum(targets[:, numClass]), k)
-        # Take the number of elements belonging to that class. 
-        # This can be done by making a call to the sum function applied to the corresponding column.
-        #num_elements = sum(targets[:,[numClass]])
-        #@assert(num_elements>=k)
-        # Call to the crossvalidation passing as parameters this number of elements and the value of k.
-        #indexs = crossvalidation(num_elements, k)
-
-        #Update the index vector positions indicated by the corresponding column of the targets matrix 
-        #with the values of the vector resulting from the call to the crossvalidation function.
-        #y=1
-        #targets_class=targets[:,[numClass]][:]
-        #for x in 1:size(targets_class,1)
-        #    if (targets_class[x]==true)
-        #        indices[x]=indexs[y]
-        #        y=y+1
-        #    end
-        #end
     end
     
     # Returns a vector of length N (equal to the number of rows of targets)
     return indices
 end
 
+# Returns the cross validation indexes
 # targets: desired outputs, k: number of subsets in which the dataset will be split
 # returns a vector of length N (equal to the number of rows of targets)
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
@@ -627,7 +633,7 @@ function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
     return indices
 end
 
-# Creates the model, trains it and return the stadistics
+# Creates the model, trains it and return the cross validation stadistics
 function modelCrossValidation(modelType::Symbol,
     modelHyperParameters::Dict,
     inputs::AbstractArray{<:Real,2},
@@ -809,6 +815,7 @@ function modelCrossValidation(modelType::Symbol,
     return (model, [accuracy, errorrate, sensitivity, specificity, fscore]);
 end
 
+# Train an ensemble of models
 function trainClassEnsemble(estimators::AbstractArray{Symbol,1}, 
         modelsHyperParameters::AbstractArray{Dict, 1},     
         trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}},    
