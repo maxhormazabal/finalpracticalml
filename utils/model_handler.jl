@@ -236,13 +236,13 @@ function get_Best_SVM(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("tol" => 0.001, "kernelGamma" => 2, "C" => 1, "kernel" => "poly", "shrinking" => true, "probability" => false, "coef0" => 0.0, "kernelDegree" => 3)
+    # Best parameters: ("tol" => 0.001, "kernelGamma" => 2, "C" => 4, "kernel" => "rbf", "shrinking" => true, "probability" => true, "coef0" => 0.0, "kernelDegree" => 3))
     parameters["tol"]=0.001
     parameters["kernelGamma"]=2
-    parameters["C"] = 1
-    parameters["kernel"] = "poly"
+    parameters["C"] = 4
+    parameters["kernel"] = "rbf"
     parameters["shrinking"] = true
-    parameters["probability"] = false
+    parameters["probability"] = true
     parameters["coef0"] = 0.0
     parameters["kernelDegree"] = 3
 
@@ -341,12 +341,12 @@ function get_Best_DT(train_inputs::AbstractArray{<:Real,2}, train_targets::Abstr
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("max_depth" => 6, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 4)
+    # Best parameters: ("max_depth" => 6, "random_state" => 1, "splitter" => "best", "criterion" => "gini", "min_samples_split" => 2)
     parameters["max_depth"]=6
     parameters["random_state"]=1
     parameters["criterion"] = "gini"
     parameters["splitter"] = "best"
-    parameters["min_samples_split"] = 4
+    parameters["min_samples_split"] = 2
 
     best_model, = modelCrossValidation(:DecisionTree, parameters, train_inputs, train_targets, kFoldIndices)
 
@@ -444,9 +444,9 @@ function get_Best_KNN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("n_neighbors" => 14, "metric" => "minkowski", "weights" => "uniform")
-    parameters["n_neighbors"]=14
-    parameters["metric"]="minkowski"
+    # Best parameters: ("n_neighbors" => 70, "metric" => "nan_euclidean", "weights" => "uniform")
+    parameters["n_neighbors"]=70
+    parameters["metric"]="nan_euclidean"
     parameters["weights"] = "uniform"
 
     best_model, = modelCrossValidation(:kNN, parameters, train_inputs, train_targets, kFoldIndices)
@@ -534,13 +534,13 @@ function get_Best_MLP(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: 
+    # Best parameters: ("maxEpochs" => 1000, "learningRate" => 0.01, "topology" => (64, 32, 24, 16, 8), "validationRatio" => 0.0, "activation" => "relu")
     parameters["maxEpochs"] = 1000
     parameters["learningRate"] = 0.01
     parameters["validationRatio"] = 0
     parameters["activation"] = "relu"
 
-    parameters["topology"] = (32, 24, 16, 8)
+    parameters["topology"] = (64, 32, 24, 16, 8)
 
     best_model, = modelCrossValidation(:MLP, parameters, train_inputs, train_targets, kFoldIndices)
 
@@ -636,7 +636,8 @@ function get_Best_LR(train_inputs::AbstractArray{<:Real,2}, train_targets::Abstr
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    parameters["max_iter"] = 500
+    # Best parameters: ("max_iter" => 1000, "multi_class" => "multinomial")
+    parameters["max_iter"] = 1000
 
     best_model, = modelCrossValidation(:LR, parameters, train_inputs, train_targets, kFoldIndices)
 
