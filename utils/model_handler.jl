@@ -13,7 +13,6 @@ function test_ANN_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     parameters["validationRatio"] = 0
 
     # Output is the number of classes
-
     parameters["topology"] = [8,8,8]
     parameters["transferFunctions"] = fill(transfer_function, length(parameters["topology"]))
     res = evaluateModel(:ANN, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
@@ -136,7 +135,7 @@ function test_SVM_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Ab
     # Additional optional parameters
     parameters["coef0"] =  0.0
     parameters["shrinking"] = true
-    parameters["probability"] = false
+    parameters["probability"] = true
     parameters["tol"] = 0.001
     
     println("Test results for SVM model: ")
