@@ -8,7 +8,6 @@ function toString(x)
 end
 
 # Calculate ranges of outliers and extreme outliers 
-
 function quartilOutliers(data)
     Q1 = quantile(data,0.25)
     Q3 = quantile(data,0.75)
@@ -21,6 +20,7 @@ function quartilOutliers(data)
     return (sup_outlier,inf_outlier,ext_sup_outlier,ext_inf_outlier)
 end
 
+# Convert to a table
 function pTable(s)
     d = Dict()
     for c in s
@@ -40,6 +40,7 @@ function pTable(s)
     return (d,array)
 end
 
+# For linear regression in loudness
 function predLoudness(value)
     x = value
     x2 = value^2
@@ -68,6 +69,7 @@ function durationToSeconds(columnToNormalize::Any)
     return columnToNormalize
 end
 
+# Convert categorical column to numeric
 function categoricalToNumericDataFrame(column,colname)
     column_dict = Dict()
     for value in levels(column)
@@ -78,6 +80,7 @@ function categoricalToNumericDataFrame(column,colname)
     return DataFrame(column_dict)
 end
 
+# Run pca transformation on a dataframe
 function pcaTranformation(pca_df)
     numrow = size(pca_dataframe,1)
     numcol = size(pca_dataframe,2)
