@@ -104,7 +104,7 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
 
-    # Best parameters: Dict{Any, Any}("repetitionsTraining" => 3, "maxEpochs" => 500, "learningRate" => 0.01, "topology" => [32, 24, 16, 8], "validationRatio" => 0, "maxEpochsVal" => 20, "minLoss" => 0.0, "transferFunctions" => [NNlib.σ, NNlib.σ, NNlib.σ, NNlib.σ]) Best accuracy: 0.1517375907273691
+    # Best parameters: Dict{Any, Any}("repetitionsTraining" => 5, "maxEpochs" => 1000, "learningRate" => 0.01, "topology" => [32, 24, 16, 8], "validationRatio" => 0, "maxEpochsVal" => 20, "minLoss" => 0.0, "transferFunctions" => [NNlib.σ, NNlib.σ, NNlib.σ, NNlib.σ]) Best accuracy: 0.2379375907273691
     parameters["maxEpochs"] = 1000
     parameters["minLoss"] = 0.0
     parameters["learningRate"] = 0.01
@@ -113,7 +113,7 @@ function get_Best_ANN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abst
     parameters["validationRatio"] = 0
 
     parameters["topology"] = [32, 24, 16, 8]
-    parameters["transferFunctions"] = fill(logsigmoid, length(parameters["topology"]))
+    parameters["transferFunctions"] = fill(sigmoid, length(parameters["topology"]))
 
     best_model, = modelCrossValidation(:ANN, parameters, train_inputs, train_targets, kFoldIndices)
 
