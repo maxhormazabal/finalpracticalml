@@ -702,7 +702,7 @@ function modelCrossValidation(modelType::Symbol,
         model = NearestCentroid()
     elseif (modelType == :RN)    
         model = RadiusNeighborsClassifier()
-    elseif (modelType == :RC)    
+    elseif (modelType == :RR)    
         model = RidgeClassifier()
     end
 
