@@ -726,21 +726,21 @@ function get_Best_RN(train_inputs::AbstractArray{<:Real,2}, train_targets::Abstr
     return best_model
 end
 
-# Test for the best RC Model
-function test_RC_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
+# Test for the best RR Model
+function test_RR_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},   
     test_inputs::AbstractArray{<:Real,2}, test_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1}, update_file::Bool, path::String)
     parameters = Dict();
     
-    println("Test results for RC model: ")
+    println("Test results for RR model: ")
 
-    res = evaluateModel(:RC, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
+    res = evaluateModel(:RR, parameters, train_inputs, train_targets, kFoldIndices, (convert(Float64, 0), Dict()))
     
     println("//////////////////////////////////////////")
     println("Best parameters: ", res[2], " Best accuracy: ", res[1])
 
     # Once a configuration has been chosen, perform a new train on the dataset and evaluates the test by obtaining the confusion matrix
-    model, = modelCrossValidation(:RC, res[2], train_inputs, train_targets, kFoldIndices)
+    model, = modelCrossValidation(:RR, res[2], train_inputs, train_targets, kFoldIndices)
 
     if update_file
         # Save the model in disk
@@ -758,11 +758,402 @@ function test_RC_Model(train_inputs::AbstractArray{<:Real,2}, train_targets::Abs
 end
 
 # Get best gb and train it
-function get_Best_RC(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
+function get_Best_RR(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1},  
     kFoldIndices::Array{Int64,1})
     parameters = Dict();
     
     best_model, = modelCrossValidation(:RC, parameters, train_inputs, train_targets, kFoldIndices)
+
+    return best_model
+end
+
+# Test for the best Majority voting ensemble
+function  test_MV_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , models::Dict, update_file::Bool, path::String)
+    
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = [("SVM", models["SVM"]), ("LR", models["LR"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"]), ("LR", models["LR"]), ("RR", models["RR"])]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("SVM", models["SVM"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("SVM", models["SVM"]), ("RR", models["RR"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    model = res[3]
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best mv and train it
+function get_Best_MV(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: Tuple{String, PyCall.PyObject}[("SVM", PyObject SVC(C=4, gamma=2)), 
+    #("DT", PyObject DecisionTreeClassifier(max_depth=6, random_state=1)), 
+    #("KNN", PyObject KNeighborsClassifier(metric='nan_euclidean', n_neighbors=70)), 
+    #("MLP", PyObject MLPClassifier(early_stopping=True, hidden_layer_sizes=(64, 32, 24, 16, 8),...
+    models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"]), ("LR", models["LR"]), ("RR", models["RR"])]
+    best_model = VotingClassifier(estimators = models, n_jobs=-1)
+
+    fit!(model,train_inputs, train_targets)
+
+    return best_model
+end
+
+# Test for the best Weighted Majority voting ensemble
+function test_WM_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , models::Dict, update_file::Bool, path::String)
+    
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    list_weights=[4,1,2,3]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1,weights=list_weights)
+    res = evaluateEnsemble(model, (test_models,list_weights) , train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = [("SVM", models["SVM"]), ("LR", models["LR"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    list_weights=[4,2,1,3]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1,weights=list_weights)
+    res = evaluateEnsemble(model, (test_models,list_weights), train_inputs, test_targets, test_inputs, test_targets, res)
+
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"]), ("LR", models["LR"]), ("RR", models["RR"])]
+    list_weights=[6,2,3,5,2,1]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1,weights=list_weights)
+    res = evaluateEnsemble(model, (test_models,list_weights), train_inputs, test_targets, test_inputs, test_targets, res)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    model = res[3]
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+    
+    println("Test: Accuracy: ", metrics[1],  
+    " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+    " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best wm and train it
+function get_Best_WM(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: (Tuple{String, PyCall.PyObject}[("SVM", PyObject SVC(C=4, gamma=2)), 
+    #("LR", PyObject LogisticRegression(max_iter=1000, multi_class='multinomial')), 
+    #("KNN", PyObject KNeighborsClassifier(metric='nan_euclidean', n_neighbors=70)), 
+    #("MLP", PyObject MLPClassifier(early_stopping=True, hidden_layer_sizes=(64, 32, 24, 16, 8),               
+    # learning_rate_init=0.01, max_iter=1000))], [4, 2, 1, 3])
+    test_models = [("SVM", models["SVM"]), ("LR", models["LR"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    list_weights=[4,2,1,3]
+    model = VotingClassifier(estimators = test_models, n_jobs=-1,weights=list_weights)
+
+    fit!(model,train_inputs, train_targets)
+
+    return best_model
+end
+
+# Test for the best Stacking ensemble 
+function test_ST_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , models::Dict, update_file::Bool, path::String)
+
+    #n_jobs=-1 causes the model to use as many available CPU resources as possible, we change n_jobs=1 to avoid the warning
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = StackingClassifier(estimators = test_models, final_estimator=SVC(probability=true), n_jobs=1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = [("SVM", models["SVM"]), ("LR", models["LR"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = StackingClassifier(estimators = test_models, final_estimator=SVC(probability=true), n_jobs=1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"]), ("LR", models["LR"]), ("RR", models["RR"])]
+    model = StackingClassifier(estimators = test_models, final_estimator=SVC(probability=true), n_jobs=1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    model = res[3]
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best st and train it
+function get_Best_ST(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: [("SVM", PyObject SVC(C=4, gamma=2)), 
+    # ("DT", PyObject DecisionTreeClassifier(max_depth=6, random_state=1)), 
+    # ("KNN", PyObject KNeighborsClassifier(metric='nan_euclidean', n_neighbors=70)), 
+    # ("MLP", PyObject MLPClassifier(early_stopping=True, hidden_layer_sizes=(64, 32, 24, 16, 8),
+    #          learning_rate_init=0.01, max_iter=1000))]
+    test_models = [("SVM", models["SVM"]), ("DT", models["DT"]), ("KNN", models["KNN"]), ("MLP", models["MLP"])]
+    model = StackingClassifier(estimators = test_models, final_estimator=SVC(probability=true), n_jobs=1)
+
+    fit!(model,train_inputs, train_targets)
+
+    return best_model
+end
+
+# Test for the best Bagging ensemble 
+function test_BG_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , models::Dict, update_file::Bool, path::String)
+    
+    test_models = [("SVM", models["SVM"], 10, 0.5)]
+    model = BaggingClassifier(base_estimator=models["SVM"],n_estimators=10, max_samples=0.5, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = [("SVM", models["SVM"], 10, 0.9)]
+    model = BaggingClassifier(base_estimator=models["SVM"],n_estimators=10, max_samples=0.9, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("DT", models["DT"], 10, 0.5)]
+    model = BaggingClassifier(base_estimator=models["DT"],n_estimators=10, max_samples=0.5, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("KNN", models["KNN"], 10, 0.5)]
+    model = BaggingClassifier(base_estimator=models["KNN"],n_estimators=10, max_samples=0.5, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("MLP", models["MLP"], 10, 0.5)]
+    model = BaggingClassifier(base_estimator=models["MLP"],n_estimators=10, max_samples=0.5, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = [("LR", models["LR"], 10, 0.5)]
+    model = BaggingClassifier(base_estimator=models["LR"],n_estimators=10, max_samples=0.5, n_jobs=-1)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    model = res[3]
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best bg and train it
+function get_Best_BG(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: Tuple{String, PyCall.PyObject, Int64, Float64}[("SVM", PyObject SVC(C=4, gamma=2), 10, 0.5)]
+    model = BaggingClassifier(base_estimator=models["SVM"],n_estimators=10, max_samples=0.5, n_jobs=-1)
+    fit!(model,train_inputs, train_targets)
+
+    return best_model
+end
+
+# Test for the best boosting ADA ensemble 
+function test_BA_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , models::Dict, update_file::Bool, path::String)
+    
+    test_models = Dict("SVM" => models["SVM"], "n_estimators" => 10, "algorithm" =>"SAMME", "learning_rate" => 1.0, "random_state" => 0)
+    model = AdaBoostClassifier(base_estimator=models["SVM"],n_estimators =10 ,algorithm = "SAMME", learning_rate = 1.0 , random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = Dict("DT" => models["DT"],"n_estimators" => 10, "algorithm" =>"SAMME", "learning_rate" => 1.0, "random_state" => 0)
+    model = AdaBoostClassifier(base_estimator=models["DT"],n_estimators =10 ,algorithm = "SAMME", learning_rate = 1.0 , random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("LR" => models["LR"],"n_estimators" => 10, "algorithm" =>"SAMME", "learning_rate" => 1.0, "random_state" => 0)
+    model = AdaBoostClassifier(base_estimator=models["LR"],n_estimators =10 ,algorithm = "SAMME", learning_rate = 1.0 , random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("RR" => models["RR"],"n_estimators" => 10, "algorithm" =>"SAMME", "learning_rate" => 1.0, "random_state" => 0)
+    model = AdaBoostClassifier(base_estimator=models["RR"],n_estimators =10 ,algorithm = "SAMME", learning_rate = 1.0 , random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    model = res[3]
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best bg and train it
+function get_Best_BA(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: ("DT" => PyObject DecisionTreeClassifier(max_depth=6, random_state=1), "algorithm" => "SAMME", "random_state" => 0, "learning_rate" => 1.0, "n_estimators" => 10)
+    model = AdaBoostClassifier(base_estimator=models["DT"],n_estimators =10 ,algorithm = "SAMME", learning_rate = 1.0 , random_state = 0)
+    fit!(model,train_inputs, train_targets)
+
+    return best_model
+end
+
+# Test for the best boosting Gradient ensemble 
+function test_GR_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , update_file::Bool, path::String)
+
+    test_models = Dict("n_estimators" => 10, "max_depth" =>2, "learning_rate" => 1.0, "random_state" => 0)
+    model= GradientBoostingClassifier(n_estimators =10, learning_rate=1, max_depth = 2, random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = Dict("n_estimators" => 10, "max_depth" =>2, "learning_rate" => 0.1, "random_state" => 0)
+    model= GradientBoostingClassifier(n_estimators =10, learning_rate=0.1, max_depth = 2, random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 10, "max_depth" =>2, "learning_rate" => 0.01, "random_state" => 0)
+    model= GradientBoostingClassifier(n_estimators =10, learning_rate=0.1, max_depth = 2, random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 10, "max_depth" =>5, "learning_rate" => 1, "random_state" => 0)
+    model= GradientBoostingClassifier(n_estimators =10, learning_rate=1, max_depth = 5, random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 10, "max_depth" =>5, "learning_rate" => 1, "random_state" => 0)
+    model= GradientBoostingClassifier(n_estimators =10, learning_rate=0.1, max_depth = 5, random_state = 0)
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", res[2], " Best accuracy: ", res[1])
+
+    model = res[3]
+
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs);
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best bg and train it
+function get_Best_GR(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: Dict{String, Real}("max_depth" => 2, "random_state" => 0, "learning_rate" => 0.1, "n_estimators" => 10)
+    model= GradientBoostingClassifier(n_estimators =10, learning_rate=0.1, max_depth = 2, random_state = 0)
+
+    fit!(model,train_inputs, train_targets)
+
+    return best_model
+end
+
+# Test for the best Random Forest ensemble 
+function test_RF_Model(train_inputs::AbstractArray{<:Real,2},train_targets::AbstractArray{<:Any,1},test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1} , update_file::Bool, path::String)
+
+    test_models = Dict("n_estimators" => 50, "max_depth" =>2, "max_features" => "auto")
+    model= RandomForestClassifier(n_estimators =50, max_depth = 2, max_features = "auto")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets,(convert(Float64, 0), Dict()))
+
+    test_models = Dict("n_estimators" => 50, "max_depth" =>10, "max_features" => "auto")
+    model= RandomForestClassifier(n_estimators =50, max_depth = 10, max_features = "auto")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 50, "max_depth" =>20, "max_features" => "auto")
+    model= RandomForestClassifier(n_estimators =50, max_depth = 20, max_features = "auto")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 180, "max_depth" =>11, "max_features" => "auto")
+    model= RandomForestClassifier(n_estimators =180, max_depth = 11, max_features = "auto")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 50, "max_depth" =>2, "max_features" => "sqrt")
+    model= RandomForestClassifier(n_estimators =50, max_depth = 2, max_features = "sqrt")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 50, "max_depth" =>10, "max_features" => "sqrt")
+    model= RandomForestClassifier(n_estimators =50, max_depth = 10, max_features = "sqrt")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 50, "max_depth" =>20, "max_features" => "sqrt")
+    model= RandomForestClassifier(n_estimators =50, max_depth = 20, max_features = "sqrt")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    test_models = Dict("n_estimators" => 180, "max_depth" =>11, "max_features" => "sqrt")
+    model= RandomForestClassifier(n_estimators =180, max_depth = 11, max_features = "sqrt")
+    res = evaluateEnsemble(model, test_models, train_inputs, train_targets, test_inputs, test_targets, res)
+
+    fit!(model, train_inputs,train_targets)
+
+    println("//////////////////////////////////////////")
+    println("Best parameters: ", model)
+    
+    if update_file
+        # Save the model in disk
+        @save path model
+    end
+    
+    testOutputs = predict(model, test_inputs)
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+     
+    println("Test: Accuracy: ", metrics[1],  
+     " Sensitivity: ", metrics[3], " Specificity rate: ", metrics[4], 
+     " FScore: ", metrics[7])
+
+    realAccuracy(testOutputs, test_targets)
+end
+
+# Get best rf and train it
+function get_Best_RF(train_inputs::AbstractArray{<:Real,2}, train_targets::AbstractArray{<:Any,1})
+    # Best params: Dict{String, Real}("max_depth" => 2, "random_state" => 0, "learning_rate" => 0.1, "n_estimators" => 10)
+    model=RandomForestClassifier()
+
+    fit!(model,train_inputs, train_targets)
 
     return best_model
 end
@@ -786,6 +1177,35 @@ function evaluateModel(modelType::Symbol,
     end
 
     return (best_accuracy, best_parameters)
+end
+
+function evaluateEnsemble(
+    model::Any,
+    modelHyperParameters::Any,
+    train_inputs::AbstractArray{<:Real,2},
+    train_targets::AbstractArray{<:Any,1},
+    test_inputs::AbstractArray{<:Real,2},
+    test_targets::AbstractArray{<:Any,1},
+    previousModel::Any)
+
+    fit!(model,train_inputs, train_targets)
+
+    testOutputs = predict(model, test_inputs)
+    metrics = confusionMatrix(testOutputs, test_targets, weighted=false);
+
+    println("Parameters: ", modelHyperParameters, " Accuracy: ", metrics[1], " Fscore: ", metrics[7])
+
+    if (metrics[1] > previousModel[1])
+        best_parameters = modelHyperParameters
+        best_accuracy = metrics[1]
+        best_model = model
+    else
+        best_parameters = previousModel[2]
+        best_accuracy = previousModel[1]
+        best_model = previousModel[3]
+    end
+
+    return (best_accuracy, best_parameters, best_model)
 end
 
 # load the model from disk
